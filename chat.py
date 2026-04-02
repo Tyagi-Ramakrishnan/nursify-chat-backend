@@ -123,6 +123,17 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
 
+# ── Mount intel router ────────────────────────────────────────────────
+from intel import intel_router, setup_scheduler, init_db
+
+app.include_router(intel_router)
+
+@app.on_event("startup")
+async def startup_event():
+    init_db()
+    scheduler = setup_scheduler()
+    scheduler.start()
+
 # ── Routes ─────────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
