@@ -225,8 +225,8 @@ $upload_action = add_query_arg('t', $token_short, get_permalink());
 
 <?php if ($authed) : ?>
 <script>
-const RAILWAY_URL   = <?php echo json_encode($railway_url); ?>;
-const UPLOAD_SECRET = <?php echo json_encode($upload_secret); ?>;
+const RAILWAY_URL   = 'https://nursify-chat-backend-production.up.railway.app/upload/result';
+const UPLOAD_SECRET = 'nursify-upload-2025';
 
 // Photo preview
 document.getElementById('photo_file').addEventListener('change', function(e) {
