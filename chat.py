@@ -14,8 +14,7 @@ import os
 # After: from intel import intel_router, setup_scheduler, init_db
 from upload_result import upload_router
 
-# After: app.include_router(intel_router)
-app.include_router(upload_router)
+
 
 # ── App ────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -129,10 +128,12 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
 
-# ── Mount intel router ────────────────────────────────────────────────
+# ── Mount routers ─────────────────────────────────────────────────────
 from intel import intel_router, setup_scheduler, init_db
+from upload_result import upload_router
 
 app.include_router(intel_router)
+app.include_router(upload_router)
 
 @app.on_event("startup")
 async def startup_event():
