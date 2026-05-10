@@ -24,8 +24,7 @@ $success       = isset($_GET['uploaded']) && $_GET['uploaded'] === '1';
 
 $procedures = [
     'botox'         => 'Botox / Wrinkle Relaxers',
-    'fillers'       => 'Dermal Fillers',
-    'lip-filler'    => 'Lip Filler',
+    'fillers'       => 'Dermal Fillers (includes Lip Filler)',
     'microneedling' => 'Microneedling',
     'wellness'      => 'Wellness Injections',
     'weight-loss'   => 'Medical Weight Loss',

@@ -242,6 +242,28 @@ async def upload_result(
     })
 
 
+# ── Fix procedure slug ────────────────────────────────────────────────────────
+@upload_router.post("/fix-procedure")
+async def fix_procedure(
+    secret:        str = Form(...),
+    old_procedure: str = Form(...),
+    new_procedure: str = Form(...),
+):
+    if secret != UPLOAD_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("UPDATE nursify_photos SET procedure = %s WHERE procedure = %s", (new_procedure, old_procedure))
+        updated = cur.rowcount
+        con.commit()
+        cur.close()
+        con.close()
+        return JSONResponse(content={"success": True, "updated": updated})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── Seed existing hardcoded photos into Postgres ───────────────────────────────
 @upload_router.post("/seed")
 async def seed_photos(secret: str = Form(...)):
