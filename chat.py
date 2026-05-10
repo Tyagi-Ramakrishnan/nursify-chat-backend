@@ -138,6 +138,8 @@ app.include_router(upload_router)
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    from upload_result import init_photos_table
+    init_photos_table()
     scheduler = setup_scheduler()
     scheduler.start()
 
