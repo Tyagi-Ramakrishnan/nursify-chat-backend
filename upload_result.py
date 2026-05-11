@@ -101,6 +101,12 @@ async def upload_health():
     }
 
 
+# Slug aliases — any of these slugs are returned when the parent slug is queried
+PROCEDURE_ALIASES: dict[str, list[str]] = {
+    "fillers": ["fillers", "lip-filler"],
+    "botox":   ["botox"],
+}
+
 # ── GET /photos — used by WordPress photo grid ────────────────────────────────
 @upload_router.get("/photos")
 async def get_photos(
@@ -122,8 +128,10 @@ async def get_photos(
         params     = []
 
         if procedure:
-            conditions.append("procedure = %s")
-            params.append(procedure)
+            slugs = PROCEDURE_ALIASES.get(procedure, [procedure])
+            placeholders = ", ".join(["%s"] * len(slugs))
+            conditions.append(f"procedure IN ({placeholders})")
+            params.extend(slugs)
         if show_on_home is not None:
             conditions.append("show_on_home = %s")
             params.append(show_on_home)
