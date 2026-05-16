@@ -23,7 +23,7 @@ import psycopg2.extras
 
 from botocore.config import Config
 from datetime import datetime
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 from typing import Optional
 
@@ -248,6 +248,38 @@ async def upload_result(
         "procedure": procedure,
         "message":  "Photo published successfully",
     })
+
+
+# ── DELETE /photos/{id} ───────────────────────────────────────────────────────
+@upload_router.delete("/photos/{photo_id}")
+async def delete_photo(photo_id: int, secret: str = Query(...)):
+    if secret != UPLOAD_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT src FROM nursify_photos WHERE id = %s", (photo_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close(); con.close()
+            raise HTTPException(status_code=404, detail="Photo not found")
+        src = row[0]
+        cur.execute("DELETE FROM nursify_photos WHERE id = %s", (photo_id,))
+        con.commit()
+        cur.close()
+        con.close()
+        # Remove from R2 if it's an R2-hosted file
+        if R2_SECRET_ACCESS_KEY and R2_PUBLIC_URL and src.startswith(R2_PUBLIC_URL):
+            try:
+                key = src[len(R2_PUBLIC_URL):].lstrip("/")
+                get_r2_client().delete_object(Bucket=R2_BUCKET_NAME, Key=key)
+            except Exception as e:
+                log.warning(f"R2 delete skipped for {src}: {e}")
+        return JSONResponse(content={"success": True, "deleted_id": photo_id})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Fix procedure slug ────────────────────────────────────────────────────────
