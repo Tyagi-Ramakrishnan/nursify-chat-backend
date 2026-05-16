@@ -14,17 +14,21 @@ Railway env vars:
     DATABASE_URL        = (your Railway Postgres URL)
 """
 
+import functools
+import io
 import os
 import uuid
 import logging
 import boto3
+import httpx
 import psycopg2
 import psycopg2.extras
+from PIL import Image
 
 from botocore.config import Config
 from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from typing import Optional
 
 log = logging.getLogger("nursify.upload")
@@ -248,6 +252,43 @@ async def upload_result(
         "procedure": procedure,
         "message":  "Photo published successfully",
     })
+
+
+# ── GET /thumbnail/{id} — resized image for the manage grid ──────────────────
+@functools.lru_cache(maxsize=500)
+def _resize_image(src: str, width: int) -> bytes:
+    with httpx.Client(timeout=15, follow_redirects=True) as client:
+        r = client.get(src)
+        r.raise_for_status()
+        raw = r.content
+    img = Image.open(io.BytesIO(raw)).convert("RGB")
+    orig_w, orig_h = img.size
+    if orig_w > width:
+        img = img.resize((width, int(orig_h * width / orig_w)), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=75, optimize=True)
+    return buf.getvalue()
+
+
+@upload_router.get("/thumbnail/{photo_id}")
+def get_thumbnail(photo_id: int):
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("SELECT src FROM nursify_photos WHERE id = %s", (photo_id,))
+        row = cur.fetchone()
+        cur.close(); con.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    if not row:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    try:
+        data = _resize_image(row[0], 400)
+        return Response(content=data, media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=86400"})
+    except Exception as e:
+        log.error(f"Thumbnail failed for photo {photo_id}: {e}")
+        raise HTTPException(status_code=502, detail="Could not process image")
 
 
 # ── DELETE /photos/{id} ───────────────────────────────────────────────────────
