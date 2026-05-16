@@ -28,7 +28,7 @@ from PIL import Image
 from botocore.config import Config
 from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response, HTMLResponse
 from typing import Optional
 
 log = logging.getLogger("nursify.upload")
@@ -103,6 +103,256 @@ async def upload_health():
         "secret_set":  bool(UPLOAD_SECRET),
         "public_url":  R2_PUBLIC_URL,
     }
+
+
+# ── GET /admin — standalone photo manager UI ──────────────────────────────────
+@upload_router.get("/admin", response_class=HTMLResponse)
+async def admin_page():
+    return HTMLResponse(content=_ADMIN_HTML)
+
+
+_ADMIN_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nursify — Photo Manager</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --pink: #ff69b4; --pink-light: #ffb6c1;
+  --text: #2a2a2a; --muted: #888; --border: #f0d9e8; --white: #fff;
+  --radius: 12px; --shadow: 0 4px 24px rgba(255,105,180,0.12);
+}
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: linear-gradient(160deg,#fff5fa 0%,#fff 60%);
+  min-height: 100vh; color: var(--text);
+}
+
+/* ── Login ── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 24px 16px;
+}
+.login-wrap { width: 100%; max-width: 400px; }
+.login-header { text-align: center; margin-bottom: 32px; }
+.login-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; }
+.login-header p { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pink); margin-top: 6px; }
+.card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 32px 28px; }
+.field { margin-bottom: 20px; }
+.field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+.field input { width: 100%; padding: 12px 14px; font-family: 'Montserrat', sans-serif; font-size: 14px; border: 1.5px solid var(--border); border-radius: 8px; background: #fafafa; color: var(--text); }
+.field input:focus { outline: none; border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255,105,180,.12); background: var(--white); }
+.btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg,var(--pink) 0%,var(--pink-light) 100%); color: var(--white); border: none; border-radius: 8px; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.btn-primary:hover { opacity: .9; }
+.alert-error { padding: 10px 14px; background: #fff0f0; color: #c0392b; border: 1px solid #ffc9c9; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+
+/* ── Admin ── */
+#admin-screen { display: none; padding: 32px 24px 60px; max-width: 1200px; margin: 0 auto; }
+.admin-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.admin-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 400; }
+.admin-meta { display: flex; align-items: center; gap: 16px; }
+#photo-count { font-size: 12px; color: var(--muted); }
+.btn-logout { font-size: 11px; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-family: 'Montserrat', sans-serif; }
+.btn-logout:hover { border-color: var(--pink); color: var(--pink); }
+.filter-bar { margin-bottom: 20px; }
+.filter-bar select { padding: 10px 14px; font-family: 'Montserrat', sans-serif; font-size: 12px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--white); color: var(--text); cursor: pointer; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.photo-card { background: var(--white); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.05); transition: opacity .3s ease; }
+.photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #f8f0f5; }
+.photo-card-body { padding: 10px 12px 12px; }
+.photo-card-title { font-size: 11px; font-weight: 500; line-height: 1.4; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.photo-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.procedure-badge { font-size: 9px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--pink); background: rgba(255,105,180,.08); border: 1px solid var(--border); padding: 2px 8px; border-radius: 20px; }
+.photo-card-date { font-size: 10px; color: #ccc; margin-top: 5px; }
+.btn-delete { font-size: 11px; font-weight: 600; color: #c0392b; background: none; border: 1px solid transparent; cursor: pointer; padding: 3px 8px; border-radius: 5px; font-family: 'Montserrat', sans-serif; }
+.btn-delete:hover { background: #fff0f0; border-color: #ffc9c9; }
+.btn-delete:disabled { opacity: .5; cursor: default; }
+.grid-msg { text-align: center; color: var(--muted); font-size: 13px; padding: 60px 0; grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-header">
+      <h1>Nursify Aesthetics</h1>
+      <p>Photo Manager</p>
+    </div>
+    <div class="card">
+      <div id="login-error" class="alert-error" style="display:none"></div>
+      <div class="field">
+        <label for="secret-input">Password</label>
+        <input type="password" id="secret-input" placeholder="Enter upload password" autocomplete="current-password">
+      </div>
+      <button class="btn-primary" id="login-btn">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin -->
+<div id="admin-screen">
+  <div class="admin-header">
+    <h1>Photo Manager</h1>
+    <div class="admin-meta">
+      <span id="photo-count"></span>
+      <button class="btn-logout" id="logout-btn">Sign out</button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <select id="procedure-filter">
+      <option value="">All procedures</option>
+      <option value="botox">Botox / Wrinkle Relaxers</option>
+      <option value="fillers">Dermal Fillers / Lip Filler</option>
+      <option value="microneedling">Microneedling</option>
+      <option value="wellness">Wellness Injections</option>
+      <option value="weight-loss">Medical Weight Loss</option>
+      <option value="prf-hair">PRF Hair Restoration</option>
+      <option value="skincare">Skincare</option>
+      <option value="reviews">Client Reviews</option>
+      <option value="events">Events / Brand</option>
+      <option value="general">General / Brand</option>
+    </select>
+  </div>
+  <div class="photo-grid" id="photo-grid">
+    <p class="grid-msg">Loading photos&hellip;</p>
+  </div>
+</div>
+
+<script>
+var secret = '';
+
+function qs(id) { return document.getElementById(id); }
+
+function showAdmin() {
+  qs('login-screen').style.display = 'none';
+  qs('admin-screen').style.display = 'block';
+}
+
+function loadPhotos(procedure) {
+  var grid = qs('photo-grid');
+  grid.innerHTML = '<p class="grid-msg">Loading…</p>';
+  var url = '/upload/photos' + (procedure ? '?procedure=' + encodeURIComponent(procedure) : '');
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var photos = data.photos || [];
+      var count = qs('photo-count');
+      if (count) count.textContent = photos.length + ' photo' + (photos.length !== 1 ? 's' : '');
+      if (!photos.length) {
+        grid.innerHTML = '<p class="grid-msg">No photos found.</p>';
+        return;
+      }
+      grid.innerHTML = photos.map(function(p) {
+        var date = p.uploaded_at
+          ? new Date(p.uploaded_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
+          : '';
+        return '<div class="photo-card" id="card-' + p.id + '">' +
+          '<img src="/upload/thumbnail/' + p.id + '" alt="' + p.title + '" loading="lazy">' +
+          '<div class="photo-card-body">' +
+            '<div class="photo-card-title" title="' + p.title + '">' + p.title + '</div>' +
+            '<div class="photo-card-meta">' +
+              '<span class="procedure-badge">' + p.procedure + '</span>' +
+              '<button class="btn-delete" data-id="' + p.id + '">Delete</button>' +
+            '</div>' +
+            (date ? '<div class="photo-card-date">' + date + '</div>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      grid.querySelectorAll('.btn-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          if (!confirm('Delete this photo? This cannot be undone.')) return;
+          btn.disabled = true;
+          btn.textContent = 'Deleting…';
+          fetch('/upload/photos/' + btn.dataset.id + '?secret=' + encodeURIComponent(secret), {method: 'DELETE'})
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+              if (res.success) {
+                var card = qs('card-' + btn.dataset.id);
+                if (card) { card.style.opacity = '0'; setTimeout(function() { card.remove(); loadPhotos(qs('procedure-filter').value); }, 300); }
+              } else {
+                btn.disabled = false; btn.textContent = 'Delete';
+                alert('Delete failed: ' + (res.detail || 'Unknown error'));
+              }
+            })
+            .catch(function(err) {
+              btn.disabled = false; btn.textContent = 'Delete';
+              alert('Network error: ' + err.message);
+            });
+        });
+      });
+    })
+    .catch(function() {
+      grid.innerHTML = '<p class="grid-msg">Failed to load photos.</p>';
+    });
+}
+
+function tryLogin(s) {
+  fetch('/upload/photos?limit=1')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.photos !== undefined) {
+        secret = s;
+        sessionStorage.setItem('nursify_secret', s);
+        showAdmin();
+        loadPhotos('');
+      } else {
+        showLoginError('Incorrect password.');
+      }
+    })
+    .catch(function() { showLoginError('Could not connect. Try again.'); });
+}
+
+function showLoginError(msg) {
+  var el = qs('login-error');
+  el.textContent = msg; el.style.display = 'block';
+  qs('login-btn').disabled = false;
+  qs('login-btn').textContent = 'Sign In';
+}
+
+// Auto-login from URL param
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var s = params.get('s') || sessionStorage.getItem('nursify_secret') || '';
+  if (s) {
+    qs('secret-input').value = s;
+    secret = s;
+    showAdmin();
+    loadPhotos('');
+  }
+})();
+
+qs('login-btn').addEventListener('click', function() {
+  var s = qs('secret-input').value.trim();
+  if (!s) return;
+  qs('login-btn').disabled = true;
+  qs('login-btn').textContent = 'Signing in…';
+  tryLogin(s);
+});
+
+qs('secret-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') qs('login-btn').click();
+});
+
+qs('procedure-filter').addEventListener('change', function() {
+  loadPhotos(this.value);
+});
+
+qs('logout-btn').addEventListener('click', function() {
+  sessionStorage.removeItem('nursify_secret');
+  secret = '';
+  qs('admin-screen').style.display = 'none';
+  qs('login-screen').style.display = 'flex';
+  qs('secret-input').value = '';
+});
+</script>
+</body>
+</html>"""
 
 
 # Slug aliases — any of these slugs are returned when the parent slug is queried
