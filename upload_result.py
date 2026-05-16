@@ -27,7 +27,7 @@ from PIL import Image
 
 from botocore.config import Config
 from datetime import datetime
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response, HTMLResponse
 from typing import Optional
 
@@ -67,7 +67,7 @@ def get_db():
 
 
 def init_photos_table():
-    """Create photos table if it doesn't exist."""
+    """Create photos table if it doesn't exist, and run migrations."""
     if not DATABASE_URL:
         return
     try:
@@ -82,8 +82,24 @@ def init_photos_table():
                 procedure     TEXT NOT NULL,
                 show_on_home  BOOLEAN DEFAULT TRUE,
                 uploaded_at   TIMESTAMP DEFAULT NOW(),
-                source        TEXT DEFAULT 'upload_portal'
+                source        TEXT DEFAULT 'upload_portal',
+                sort_order    INTEGER DEFAULT 0
             );
+        """)
+        # Add sort_order to existing tables that predate this column
+        cur.execute("""
+            ALTER TABLE nursify_photos
+            ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+        """)
+        # Seed sort_order for any rows still at 0 (preserve current date order)
+        cur.execute("""
+            UPDATE nursify_photos SET sort_order = sub.rn
+            FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (ORDER BY uploaded_at DESC) * 10 AS rn
+                FROM nursify_photos WHERE sort_order = 0
+            ) sub
+            WHERE nursify_photos.id = sub.id;
         """)
         con.commit()
         cur.close()
@@ -160,9 +176,17 @@ body {
 .btn-logout:hover { border-color: var(--pink); color: var(--pink); }
 .filter-bar { margin-bottom: 20px; }
 .filter-bar select { padding: 10px 14px; font-family: 'Montserrat', sans-serif; font-size: 12px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--white); color: var(--text); cursor: pointer; }
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-bar select { padding: 10px 14px; font-family: 'Montserrat', sans-serif; font-size: 12px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--white); color: var(--text); cursor: pointer; }
+.btn-save-order { background: linear-gradient(135deg,var(--pink) 0%,var(--pink-light) 100%); color: var(--white); border: none; padding: 10px 22px; border-radius: 8px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: none; }
+.btn-save-order:hover { opacity: .9; }
+.btn-save-order:disabled { opacity: .6; cursor: default; }
+.save-hint { font-size: 11px; color: var(--muted); display: none; font-style: italic; }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-.photo-card { background: var(--white); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.05); transition: opacity .3s ease; }
-.photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #f8f0f5; }
+.photo-card { background: var(--white); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.05); transition: opacity .25s ease, border-color .2s; cursor: grab; user-select: none; }
+.photo-card.dragging { opacity: 0.35; cursor: grabbing; }
+.photo-card.drag-over { border-color: var(--pink); box-shadow: 0 0 0 2px rgba(255,105,180,0.3); }
+.photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #f8f0f5; pointer-events: none; }
 .photo-card-body { padding: 10px 12px 12px; }
 .photo-card-title { font-size: 11px; font-weight: 500; line-height: 1.4; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .photo-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
@@ -203,20 +227,24 @@ body {
       <button class="btn-logout" id="logout-btn">Sign out</button>
     </div>
   </div>
-  <div class="filter-bar">
-    <select id="procedure-filter">
-      <option value="">All procedures</option>
-      <option value="botox">Botox / Wrinkle Relaxers</option>
-      <option value="fillers">Dermal Fillers / Lip Filler</option>
-      <option value="microneedling">Microneedling</option>
-      <option value="wellness">Wellness Injections</option>
-      <option value="weight-loss">Medical Weight Loss</option>
-      <option value="prf-hair">PRF Hair Restoration</option>
-      <option value="skincare">Skincare</option>
-      <option value="reviews">Client Reviews</option>
-      <option value="events">Events / Brand</option>
-      <option value="general">General / Brand</option>
-    </select>
+  <div class="toolbar">
+    <div class="filter-bar">
+      <select id="procedure-filter">
+        <option value="">All procedures</option>
+        <option value="botox">Botox / Wrinkle Relaxers</option>
+        <option value="fillers">Dermal Fillers / Lip Filler</option>
+        <option value="microneedling">Microneedling</option>
+        <option value="wellness">Wellness Injections</option>
+        <option value="weight-loss">Medical Weight Loss</option>
+        <option value="prf-hair">PRF Hair Restoration</option>
+        <option value="skincare">Skincare</option>
+        <option value="reviews">Client Reviews</option>
+        <option value="events">Events / Brand</option>
+        <option value="general">General / Brand</option>
+      </select>
+    </div>
+    <button class="btn-save-order" id="save-order-btn">Save Order</button>
+    <span class="save-hint" id="save-hint">Drag photos to reorder, then tap Save Order.</span>
   </div>
   <div class="photo-grid" id="photo-grid">
     <p class="grid-msg">Loading photos&hellip;</p>
@@ -225,6 +253,8 @@ body {
 
 <script>
 var secret = '';
+var orderChanged = false;
+var draggedEl = null;
 
 function qs(id) { return document.getElementById(id); }
 
@@ -236,6 +266,10 @@ function showAdmin() {
 function loadPhotos(procedure) {
   var grid = qs('photo-grid');
   grid.innerHTML = '<p class="grid-msg">Loading…</p>';
+  orderChanged = false;
+  qs('save-order-btn').style.display = 'none';
+  qs('save-hint').style.display = 'none';
+
   var url = '/upload/photos' + (procedure ? '?procedure=' + encodeURIComponent(procedure) : '');
   fetch(url)
     .then(function(r) { return r.json(); })
@@ -251,7 +285,7 @@ function loadPhotos(procedure) {
         var date = p.uploaded_at
           ? new Date(p.uploaded_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
           : '';
-        return '<div class="photo-card" id="card-' + p.id + '">' +
+        return '<div class="photo-card" id="card-' + p.id + '" data-id="' + p.id + '" draggable="true">' +
           '<img src="/upload/thumbnail/' + p.id + '" alt="' + p.title + '" loading="lazy">' +
           '<div class="photo-card-body">' +
             '<div class="photo-card-title" title="' + p.title + '">' + p.title + '</div>' +
@@ -264,32 +298,106 @@ function loadPhotos(procedure) {
         '</div>';
       }).join('');
 
-      grid.querySelectorAll('.btn-delete').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          if (!confirm('Delete this photo? This cannot be undone.')) return;
-          btn.disabled = true;
-          btn.textContent = 'Deleting…';
-          fetch('/upload/photos/' + btn.dataset.id + '?secret=' + encodeURIComponent(secret), {method: 'DELETE'})
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-              if (res.success) {
-                var card = qs('card-' + btn.dataset.id);
-                if (card) { card.style.opacity = '0'; setTimeout(function() { card.remove(); loadPhotos(qs('procedure-filter').value); }, 300); }
-              } else {
-                btn.disabled = false; btn.textContent = 'Delete';
-                alert('Delete failed: ' + (res.detail || 'Unknown error'));
-              }
-            })
-            .catch(function(err) {
-              btn.disabled = false; btn.textContent = 'Delete';
-              alert('Network error: ' + err.message);
-            });
-        });
-      });
+      initDragDrop();
+      bindDeleteButtons();
     })
     .catch(function() {
       grid.innerHTML = '<p class="grid-msg">Failed to load photos.</p>';
     });
+}
+
+function initDragDrop() {
+  var grid = qs('photo-grid');
+  grid.querySelectorAll('.photo-card').forEach(function(card) {
+    card.addEventListener('dragstart', function(e) {
+      draggedEl = card;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function() { card.classList.add('dragging'); }, 0);
+    });
+    card.addEventListener('dragend', function() {
+      card.classList.remove('dragging');
+      grid.querySelectorAll('.photo-card').forEach(function(c) { c.classList.remove('drag-over'); });
+      draggedEl = null;
+      if (orderChanged) {
+        qs('save-order-btn').style.display = 'inline-block';
+        qs('save-hint').style.display = 'inline';
+      }
+    });
+    card.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!draggedEl || card === draggedEl) return;
+      grid.querySelectorAll('.photo-card').forEach(function(c) { c.classList.remove('drag-over'); });
+      card.classList.add('drag-over');
+      var rect = card.getBoundingClientRect();
+      if (e.clientX < rect.left + rect.width / 2) {
+        grid.insertBefore(draggedEl, card);
+      } else {
+        grid.insertBefore(draggedEl, card.nextSibling);
+      }
+      orderChanged = true;
+    });
+    card.addEventListener('drop', function(e) { e.preventDefault(); });
+  });
+}
+
+function bindDeleteButtons() {
+  var grid = qs('photo-grid');
+  grid.querySelectorAll('.btn-delete').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm('Delete this photo? This cannot be undone.')) return;
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+      fetch('/upload/photos/' + btn.dataset.id + '?secret=' + encodeURIComponent(secret), {method: 'DELETE'})
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.success) {
+            var card = qs('card-' + btn.dataset.id);
+            if (card) { card.style.opacity = '0'; setTimeout(function() { card.remove(); loadPhotos(qs('procedure-filter').value); }, 300); }
+          } else {
+            btn.disabled = false; btn.textContent = 'Delete';
+            alert('Delete failed: ' + (res.detail || 'Unknown error'));
+          }
+        })
+        .catch(function(err) {
+          btn.disabled = false; btn.textContent = 'Delete';
+          alert('Network error: ' + err.message);
+        });
+    });
+  });
+}
+
+function saveOrder() {
+  var grid = qs('photo-grid');
+  var ids = Array.from(grid.querySelectorAll('.photo-card')).map(function(c) {
+    return parseInt(c.dataset.id, 10);
+  });
+  var btn = qs('save-order-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  fetch('/upload/reorder', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({secret: secret, order: ids})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.success) {
+      orderChanged = false;
+      btn.style.display = 'none';
+      btn.disabled = false;
+      btn.textContent = 'Save Order';
+      qs('save-hint').style.display = 'none';
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Save Order';
+      alert('Save failed: ' + (res.detail || 'Unknown error'));
+    }
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = 'Save Order';
+    alert('Network error: ' + err.message);
+  });
 }
 
 function tryLogin(s) {
@@ -342,6 +450,8 @@ qs('secret-input').addEventListener('keydown', function(e) {
 qs('procedure-filter').addEventListener('change', function() {
   loadPhotos(this.value);
 });
+
+qs('save-order-btn').addEventListener('click', saveOrder);
 
 qs('logout-btn').addEventListener('click', function() {
   sessionStorage.removeItem('nursify_secret');
@@ -398,7 +508,7 @@ async def get_photos(
                    show_on_home, uploaded_at
             FROM nursify_photos
             {where}
-            ORDER BY uploaded_at DESC
+            ORDER BY sort_order ASC, uploaded_at DESC
             {lim}
         """, params)
 
@@ -539,6 +649,29 @@ def get_thumbnail(photo_id: int):
     except Exception as e:
         log.error(f"Thumbnail failed for photo {photo_id}: {e}")
         raise HTTPException(status_code=502, detail="Could not process image")
+
+
+# ── POST /reorder — save drag-and-drop order ──────────────────────────────────
+@upload_router.post("/reorder")
+async def reorder_photos(request: Request):
+    body = await request.json()
+    if body.get("secret") != UPLOAD_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    ids = body.get("order", [])
+    if not ids:
+        raise HTTPException(status_code=400, detail="No order provided")
+    try:
+        con = get_db()
+        cur = con.cursor()
+        for i, photo_id in enumerate(ids, 1):
+            cur.execute("UPDATE nursify_photos SET sort_order = %s WHERE id = %s",
+                        (i * 10, int(photo_id)))
+        con.commit()
+        cur.close()
+        con.close()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── DELETE /photos/{id} ───────────────────────────────────────────────────────
