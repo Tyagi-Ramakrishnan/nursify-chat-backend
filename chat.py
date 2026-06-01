@@ -131,15 +131,18 @@ class ChatResponse(BaseModel):
 # ── Mount routers ─────────────────────────────────────────────────────
 from intel import intel_router, setup_scheduler, init_db
 from upload_result import upload_router
+from events import router as events_router, init_events_db
 
 app.include_router(intel_router)
 app.include_router(upload_router)
+app.include_router(events_router)
 
 @app.on_event("startup")
 async def startup_event():
     init_db()
     from upload_result import init_photos_table
     init_photos_table()
+    init_events_db()
     scheduler = setup_scheduler()
     scheduler.start()
 

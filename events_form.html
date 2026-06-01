@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Registration — Nursify Aesthetics</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent:   #ff69b4;
+  --deep:     #d4538f;
+  --bg:       #fdf8f9;
+  --text:     #6b6065;
+  --dark:     #2a2a2a;
+  --border:   rgba(255,105,180,0.18);
+  --radius:   4px;
+  --shadow:   0 2px 4px rgba(0,0,0,0.06);
+}
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px 60px;
+}
+.logo-bar {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.logo-bar h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--dark);
+  letter-spacing: 0.04em;
+}
+.logo-bar p {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 4px;
+}
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 520px;
+  padding: 36px 32px;
+}
+#event-selector { margin-bottom: 24px; }
+#event-selector label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+select, input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
+  width: 100%;
+  padding: 11px 13px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  color: var(--dark);
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+select:focus, input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,105,180,0.10);
+  background: #fff;
+}
+.event-info { margin-bottom: 28px; }
+.event-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--dark);
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+.event-meta {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.8;
+}
+.event-meta strong { color: var(--dark); font-weight: 600; }
+.clearance-note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(255,105,180,0.05);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+.field { margin-bottom: 18px; }
+.field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+.field .hint {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 5px;
+}
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--deep) 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.2s;
+}
+.btn-submit:hover { opacity: 0.9; }
+.btn-submit:disabled { opacity: 0.55; cursor: default; }
+.msg-success {
+  text-align: center;
+  padding: 28px 24px;
+}
+.msg-success .check {
+  font-size: 36px;
+  margin-bottom: 14px;
+}
+.msg-success h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--dark);
+  margin-bottom: 10px;
+}
+.msg-success p { font-size: 13px; line-height: 1.7; }
+.msg-success .event-label {
+  font-weight: 600;
+  color: var(--deep);
+}
+.alert-error {
+  background: #fff0f4;
+  border: 1px solid rgba(212,83,143,0.3);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  font-size: 12px;
+  color: #c0392b;
+  margin-bottom: 16px;
+  display: none;
+}
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text);
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<div class="logo-bar">
+  <h1>Nursify Aesthetics &amp; Wellness</h1>
+  <p>Event Registration</p>
+</div>
+
+<div class="card" id="main-card">
+  <div class="loading" id="loading-state">Loading event&hellip;</div>
+
+  <div id="form-state" style="display:none">
+    <div id="event-selector" style="display:none">
+      <label for="event-select">Select an event</label>
+      <select id="event-select"></select>
+    </div>
+
+    <div class="event-info" id="event-info" style="display:none">
+      <div class="event-name" id="ev-name"></div>
+      <div class="event-meta">
+        <div><strong>Date:</strong> <span id="ev-date"></span></div>
+        <div><strong>Registration deadline:</strong> <span id="ev-deadline"></span></div>
+      </div>
+      <div class="clearance-note" id="ev-clearance" style="display:none"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="alert-error" id="form-error"></div>
+
+    <form id="reg-form" novalidate>
+      <div class="field">
+        <label for="f-name">Full Name</label>
+        <input type="text" id="f-name" name="full_name" placeholder="Jane Smith" required>
+      </div>
+      <div class="field">
+        <label for="f-dob">Date of Birth</label>
+        <input type="date" id="f-dob" name="dob" required>
+        <p class="hint">Required for medical records.</p>
+      </div>
+      <div class="field">
+        <label for="f-phone">Phone Number</label>
+        <input type="tel" id="f-phone" name="phone" placeholder="(505) 555-0100" required>
+      </div>
+      <div class="field">
+        <label for="f-email">Email Address</label>
+        <input type="email" id="f-email" name="email" placeholder="jane@example.com" required>
+      </div>
+      <div class="field">
+        <label for="f-referral">How did you hear about us?</label>
+        <select id="f-referral" name="referral_source" required>
+          <option value="" disabled selected>Select an option</option>
+          <option value="Instagram">Instagram</option>
+          <option value="Facebook">Facebook</option>
+          <option value="Google Search">Google Search</option>
+          <option value="Friend/Referral">Friend / Referral</option>
+          <option value="Existing Client">Existing Client</option>
+          <option value="Flyer/Print">Flyer / Print</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-submit" id="submit-btn">Register for Event</button>
+    </form>
+  </div>
+
+  <div class="msg-success" id="success-state" style="display:none">
+    <div class="check">&#10003;</div>
+    <h2>You&rsquo;re registered!</h2>
+    <p>We&rsquo;ve received your registration for <span class="event-label" id="success-event-name"></span>
+    on <span id="success-event-date"></span>. We&rsquo;ll be in touch with details soon!</p>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────
+var API_BASE_URL = '';   // leave empty to use same origin
+
+// ── State ───────────────────────────────────────────────────────────
+var currentEvent = null;
+var events = [];
+
+function fmt(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+  });
+}
+
+function showError(msg) {
+  var el = document.getElementById('form-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearError() {
+  var el = document.getElementById('form-error');
+  el.textContent = '';
+  el.style.display = 'none';
+}
+
+function renderEvent(ev) {
+  currentEvent = ev;
+  document.getElementById('ev-name').textContent = ev.name;
+  document.getElementById('ev-date').textContent = fmt(ev.event_date);
+  document.getElementById('ev-deadline').textContent = fmt(ev.registration_deadline);
+
+  var cn = document.getElementById('ev-clearance');
+  if (ev.medical_clearance_note) {
+    cn.textContent = ev.medical_clearance_note;
+    cn.style.display = 'block';
+  } else {
+    cn.style.display = 'none';
+  }
+  document.getElementById('event-info').style.display = 'block';
+}
+
+function loadEvents() {
+  fetch(API_BASE_URL + '/events/active')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      events = data.events || [];
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('form-state').style.display = 'block';
+
+      if (events.length === 0) {
+        document.getElementById('form-state').innerHTML =
+          '<p style="text-align:center;padding:24px;font-size:13px;color:#999;">No events are currently open for registration.</p>';
+        return;
+      }
+
+      if (events.length === 1) {
+        renderEvent(events[0]);
+      } else {
+        var sel = document.getElementById('event-select');
+        events.forEach(function(ev) {
+          var opt = document.createElement('option');
+          opt.value = ev.id;
+          opt.textContent = ev.name + ' — ' + new Date(ev.event_date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+          sel.appendChild(opt);
+        });
+        document.getElementById('event-selector').style.display = 'block';
+        sel.addEventListener('change', function() {
+          var ev = events.find(function(e) { return e.id === sel.value; });
+          if (ev) renderEvent(ev);
+        });
+      }
+    })
+    .catch(function() {
+      document.getElementById('loading-state').textContent = 'Could not load events. Please try again later.';
+    });
+}
+
+document.getElementById('reg-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  clearError();
+
+  if (!currentEvent) { showError('Please select an event.'); return; }
+
+  var name     = document.getElementById('f-name').value.trim();
+  var dob      = document.getElementById('f-dob').value;
+  var phone    = document.getElementById('f-phone').value.trim();
+  var email    = document.getElementById('f-email').value.trim();
+  var referral = document.getElementById('f-referral').value;
+
+  if (!name || !dob || !phone || !email || !referral) {
+    showError('Please fill in all fields before submitting.');
+    return;
+  }
+
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  fetch(API_BASE_URL + '/events/' + currentEvent.id + '/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      full_name:       name,
+      dob:             dob,
+      phone:           phone,
+      email:           email,
+      referral_source: referral,
+    }),
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(res) {
+    if (res.ok) {
+      document.getElementById('form-state').style.display = 'none';
+      document.getElementById('success-event-name').textContent = currentEvent.name;
+      document.getElementById('success-event-date').textContent =
+        new Date(currentEvent.event_date).toLocaleDateString('en-US', {
+          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+        });
+      document.getElementById('success-state').style.display = 'block';
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Register for Event';
+      showError(res.data.detail || 'Registration failed. Please try again.');
+    }
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = 'Register for Event';
+    showError('Network error. Please check your connection and try again.');
+  });
+});
+
+loadEvents();
+</script>
+</body>
+</html>
