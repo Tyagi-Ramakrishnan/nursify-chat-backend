@@ -3,272 +3,597 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Event Registration — Nursify Aesthetics</title>
-<meta name="robots" content="noindex, nofollow">
+<title>Event Registration — Nursify Aesthetics & Wellness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Design tokens ─────────────────────────────────────────── */
 :root {
-  --accent:   #ff69b4;
-  --deep:     #d4538f;
-  --bg:       #fdf8f9;
-  --text:     #6b6065;
-  --dark:     #2a2a2a;
-  --border:   rgba(255,105,180,0.18);
-  --radius:   4px;
-  --shadow:   0 2px 4px rgba(0,0,0,0.06);
+  --rose-deep: #2a0d18;
+  --rose-mid:  #3d1428;
+  --rose-light:#5a1e38;
+  --gold:      #c9a96e;
+  --gold-light:#e8d5b0;
+  --pink:      #ff69b4;
+  --pink-dark: #d4538f;
+  --ivory:     #fdf8f9;
+  --ivory-2:   #f5eef2;
+  --text:      #1a0a10;
+  --text-mid:  #4a2535;
+  --border:    rgba(201,169,110,0.25);
+  --shadow:    0 4px 24px rgba(42,13,24,0.12);
 }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
   font-family: 'Montserrat', sans-serif;
-  background: var(--bg);
+  background: var(--ivory);
   color: var(--text);
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40px 16px 60px;
 }
-.logo-bar {
-  text-align: center;
-  margin-bottom: 32px;
+
+/* ── Loading / error states ────────────────────────────────── */
+.ef-loading {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 60vh; flex-direction: column; gap: 16px;
 }
-.logo-bar h1 {
+.ef-spinner {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ef-error-msg {
+  text-align: center; padding: 80px 20px;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--dark);
-  letter-spacing: 0.04em;
+  color: var(--rose-mid);
 }
-.logo-bar p {
-  font-size: 10px;
+.ef-error-msg h2 { font-size: 2rem; font-weight: 300; margin-bottom: 12px; }
+.ef-error-msg p  { color: var(--text-mid); font-family: 'Montserrat', sans-serif; font-size: 0.9rem; }
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.ef-hero {
+  background: linear-gradient(135deg, var(--rose-deep) 0%, var(--rose-mid) 60%, var(--rose-light) 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 60px 40px 50px;
+}
+.ef-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(201,169,110,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.ef-hero-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+
+.ef-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ef-eyebrow {
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent);
-  margin-top: 4px;
+  color: var(--gold);
+  margin-bottom: 14px;
 }
-.card {
+
+.ef-hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem;
+  font-weight: 300;
+  color: var(--ivory);
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.ef-hero h1 em {
+  font-style: italic;
+  color: var(--gold-light);
+}
+
+.ef-hero-desc {
+  font-size: 0.92rem;
+  color: rgba(253,248,249,0.75);
+  line-height: 1.7;
+  max-width: 480px;
+  margin-bottom: 20px;
+}
+
+.ef-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ef-pill {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  border: 1px solid rgba(201,169,110,0.35);
+  border-radius: 20px;
+  padding: 5px 12px;
+  backdrop-filter: blur(4px);
+  background: rgba(201,169,110,0.08);
+}
+
+/* ── Flyer panel ───────────────────────────────────────────── */
+.ef-hero-flyer {
+  flex-shrink: 0;
+  width: 200px;
+  transform: rotate(2.5deg);
+  transition: transform 0.4s ease;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.5));
+}
+.ef-hero-flyer:hover { transform: rotate(0deg); }
+
+.ef-hero-flyer img {
+  width: 100%;
+  border-radius: 6px;
+  display: block;
+}
+
+.ef-flyer-placeholder {
+  width: 200px;
+  height: 280px;
+  border-radius: 6px;
+  border: 1px solid rgba(201,169,110,0.3);
+  background: linear-gradient(160deg, rgba(201,169,110,0.12) 0%, rgba(42,13,24,0.4) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(201,169,110,0.6);
+}
+.ef-flyer-placeholder .fp-icon {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+.ef-flyer-placeholder .fp-text {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(201,169,110,0.5);
+  padding: 0 16px;
+  line-height: 1.5;
+}
+
+/* ── Two-column layout ─────────────────────────────────────── */
+.ef-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 40px 60px;
+}
+
+.ef-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 32px;
+  align-items: start;
+}
+
+/* ── Form card ─────────────────────────────────────────────── */
+.ef-form-card {
   background: #fff;
-  border-radius: var(--radius);
+  border-radius: 12px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
-  width: 100%;
-  max-width: 520px;
-  padding: 36px 32px;
+  padding: 36px;
 }
-#event-selector { margin-bottom: 24px; }
-#event-selector label {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text);
-  margin-bottom: 7px;
-}
-select, input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
-  width: 100%;
-  padding: 11px 13px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  color: var(--dark);
-  background: #fafafa;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-select:focus, input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255,105,180,0.10);
-  background: #fff;
-}
-.event-info { margin-bottom: 28px; }
-.event-name {
+
+.ef-form-card h2 {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 28px;
-  font-weight: 500;
-  color: var(--dark);
-  margin-bottom: 12px;
-  line-height: 1.2;
+  font-size: 1.7rem;
+  font-weight: 300;
+  color: var(--rose-deep);
+  margin-bottom: 6px;
 }
-.event-meta {
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.8;
+.ef-form-card .ef-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  margin-bottom: 28px;
+  line-height: 1.5;
 }
-.event-meta strong { color: var(--dark); font-weight: 600; }
-.clearance-note {
-  margin-top: 12px;
-  padding: 12px 14px;
-  background: rgba(255,105,180,0.05);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.7;
+
+.ef-field {
+  margin-bottom: 20px;
 }
-.divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 24px 0;
-}
-.field { margin-bottom: 18px; }
-.field label {
+.ef-field label {
   display: block;
-  font-size: 10px;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text);
+  color: var(--rose-mid);
   margin-bottom: 7px;
 }
-.field .hint {
-  font-size: 11px;
-  color: #bbb;
-  margin-top: 5px;
+.ef-field input,
+.ef-field select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #e0d0d8;
+  border-radius: 7px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: var(--ivory);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
-.btn-submit {
+.ef-field input:focus,
+.ef-field select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,169,110,0.15);
+}
+.ef-field.has-error input,
+.ef-field.has-error select {
+  border-color: #e05c7a;
+}
+.ef-field-error {
+  font-size: 0.72rem;
+  color: #c0394f;
+  margin-top: 5px;
+  display: none;
+}
+.ef-field.has-error .ef-field-error { display: block; }
+
+.ef-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ef-select-wrap {
+  position: relative;
+}
+.ef-select-wrap::after {
+  content: '\25BE';
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+  pointer-events: none;
+  font-size: 0.8rem;
+}
+
+.ef-submit {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--deep) 100%);
+  background: linear-gradient(135deg, var(--pink-dark) 0%, var(--pink) 100%);
   color: #fff;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 8px;
   font-family: 'Montserrat', sans-serif;
-  font-size: 12px;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
   margin-top: 8px;
-  transition: opacity 0.2s;
 }
-.btn-submit:hover { opacity: 0.9; }
-.btn-submit:disabled { opacity: 0.55; cursor: default; }
-.msg-success {
+.ef-submit:hover  { opacity: 0.9; }
+.ef-submit:active { transform: scale(0.99); }
+.ef-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Success state ─────────────────────────────────────────── */
+.ef-success {
+  display: none;
   text-align: center;
-  padding: 28px 24px;
+  padding: 48px 24px;
 }
-.msg-success .check {
-  font-size: 36px;
-  margin-bottom: 14px;
+.ef-success-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
 }
-.msg-success h2 {
+.ef-success h3 {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--dark);
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--rose-deep);
   margin-bottom: 10px;
 }
-.msg-success p { font-size: 13px; line-height: 1.7; }
-.msg-success .event-label {
-  font-weight: 600;
-  color: var(--deep);
+.ef-success p {
+  font-size: 0.88rem;
+  color: var(--text-mid);
+  line-height: 1.6;
 }
-.alert-error {
-  background: #fff0f4;
-  border: 1px solid rgba(212,83,143,0.3);
-  border-radius: var(--radius);
-  padding: 11px 14px;
-  font-size: 12px;
-  color: #c0392b;
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+.ef-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ef-info-card,
+.ef-clearance-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+
+.ef-info-card h3,
+.ef-clearance-card h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--rose-deep);
   margin-bottom: 16px;
-  display: none;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
-.loading {
-  text-align: center;
-  padding: 40px;
+
+.ef-detail-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(201,169,110,0.1);
+}
+.ef-detail-row:last-child { border-bottom: none; }
+
+.ef-detail-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+.ef-detail-content { flex: 1; }
+.ef-detail-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 3px;
+}
+.ef-detail-value {
+  font-size: 0.82rem;
   color: var(--text);
-  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ef-clearance-card { border-left: 3px solid var(--gold); }
+.ef-clearance-card p {
+  font-size: 0.82rem;
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+
+/* ── Seats indicator ───────────────────────────────────────── */
+.ef-seats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--rose-deep), var(--rose-mid));
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: var(--ivory);
+}
+.ef-seats-dot {
+  width: 10px; height: 10px;
+  background: #4caf50;
+  border-radius: 50%;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.7; }
+}
+.ef-seats-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.ef-seats-text strong { font-weight: 600; }
+
+/* ── Footer ────────────────────────────────────────────────── */
+.ef-footer {
+  background: var(--rose-deep);
+  color: rgba(253,248,249,0.55);
+  text-align: center;
+  padding: 24px 20px;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+.ef-footer a { color: var(--gold); text-decoration: none; }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .ef-hero-inner { flex-direction: column; gap: 32px; text-align: center; }
+  .ef-hero-desc  { margin: 0 auto 20px; }
+  .ef-pills      { justify-content: center; }
+  .ef-hero-flyer { width: 160px; }
+  .ef-wrap       { padding: 24px 16px 48px; }
+  .ef-layout     { grid-template-columns: 1fr; }
+  .ef-row-2      { grid-template-columns: 1fr; }
+  .ef-hero       { padding: 40px 20px 36px; }
+  .ef-hero h1    { font-size: 2.2rem; }
 }
 </style>
 </head>
 <body>
 
-<div class="logo-bar">
-  <h1>Nursify Aesthetics &amp; Wellness</h1>
-  <p>Event Registration</p>
+<!-- Loading -->
+<div class="ef-loading" id="ef-loading">
+  <div class="ef-spinner"></div>
+  <p style="font-size:0.8rem;color:var(--text-mid);letter-spacing:0.08em;">Loading event details&hellip;</p>
 </div>
 
-<div class="card" id="main-card">
-  <div class="loading" id="loading-state">Loading event&hellip;</div>
+<!-- Error -->
+<div class="ef-error-msg" id="ef-error" style="display:none">
+  <h2>No Events Available</h2>
+  <p>There are no upcoming events at this time. Check back soon or call us at (505) 500-7900.</p>
+</div>
 
-  <div id="form-state" style="display:none">
-    <div id="event-selector" style="display:none">
-      <label for="event-select">Select an event</label>
-      <select id="event-select"></select>
+<!-- Hero -->
+<section class="ef-hero" id="ef-hero" style="display:none">
+  <div class="ef-hero-inner">
+    <div class="ef-hero-text">
+      <p class="ef-eyebrow">Nursify Aesthetics &amp; Wellness</p>
+      <h1 id="ef-hero-title">Event <em>Registration</em></h1>
+      <p class="ef-hero-desc" id="ef-hero-desc"></p>
+      <div class="ef-pills" id="ef-pills"></div>
     </div>
-
-    <div class="event-info" id="event-info" style="display:none">
-      <div class="event-name" id="ev-name"></div>
-      <div class="event-meta">
-        <div><strong>Date:</strong> <span id="ev-date"></span></div>
-        <div><strong>Registration deadline:</strong> <span id="ev-deadline"></span></div>
-      </div>
-      <div class="clearance-note" id="ev-clearance" style="display:none"></div>
+    <div class="ef-hero-flyer" id="ef-hero-flyer" style="display:none">
+      <!-- filled by JS -->
     </div>
-
-    <hr class="divider">
-
-    <div class="alert-error" id="form-error"></div>
-
-    <form id="reg-form" novalidate>
-      <div class="field">
-        <label for="f-name">Full Name</label>
-        <input type="text" id="f-name" name="full_name" placeholder="Jane Smith" required>
-      </div>
-      <div class="field">
-        <label for="f-dob">Date of Birth</label>
-        <input type="date" id="f-dob" name="dob" required>
-        <p class="hint">Required for medical records.</p>
-      </div>
-      <div class="field">
-        <label for="f-phone">Phone Number</label>
-        <input type="tel" id="f-phone" name="phone" placeholder="(505) 555-0100" required>
-      </div>
-      <div class="field">
-        <label for="f-email">Email Address</label>
-        <input type="email" id="f-email" name="email" placeholder="jane@example.com" required>
-      </div>
-      <div class="field">
-        <label for="f-referral">How did you hear about us?</label>
-        <select id="f-referral" name="referral_source" required>
-          <option value="" disabled selected>Select an option</option>
-          <option value="Instagram">Instagram</option>
-          <option value="Facebook">Facebook</option>
-          <option value="Google Search">Google Search</option>
-          <option value="Friend/Referral">Friend / Referral</option>
-          <option value="Existing Client">Existing Client</option>
-          <option value="Flyer/Print">Flyer / Print</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <button type="submit" class="btn-submit" id="submit-btn">Register for Event</button>
-    </form>
   </div>
+</section>
 
-  <div class="msg-success" id="success-state" style="display:none">
-    <div class="check">&#10003;</div>
-    <h2>You&rsquo;re registered!</h2>
-    <p>We&rsquo;ve received your registration for <span class="event-label" id="success-event-name"></span>
-    on <span id="success-event-date"></span>. We&rsquo;ll be in touch with details soon!</p>
+<!-- Two-column body -->
+<div class="ef-wrap" id="ef-wrap" style="display:none">
+  <div class="ef-layout">
+
+    <!-- Form card -->
+    <div class="ef-form-card">
+      <h2>Reserve Your Spot</h2>
+      <p class="ef-subtitle">Complete the form below. All fields are required.</p>
+
+      <!-- Success -->
+      <div class="ef-success" id="ef-success">
+        <div class="ef-success-icon">&#10024;</div>
+        <h3>You&rsquo;re Registered!</h3>
+        <p>We&rsquo;ll send a confirmation to your email. We can&rsquo;t wait to see you.<br>
+           Questions? Call or text <a href="tel:+15055007900" style="color:var(--pink-dark)">(505) 500-7900</a>.</p>
+      </div>
+
+      <form id="ef-form" novalidate>
+        <div class="ef-field" id="f-name">
+          <label for="inp-name">Full Name</label>
+          <input type="text" id="inp-name" placeholder="Jane Smith" autocomplete="name">
+          <div class="ef-field-error">Please enter your full name.</div>
+        </div>
+
+        <div class="ef-row-2">
+          <div class="ef-field" id="f-dob">
+            <label for="inp-dob">Date of Birth</label>
+            <input type="date" id="inp-dob">
+            <div class="ef-field-error">Please enter your date of birth.</div>
+          </div>
+          <div class="ef-field" id="f-phone">
+            <label for="inp-phone">Phone / Text</label>
+            <input type="tel" id="inp-phone" placeholder="(505) 555-0100" autocomplete="tel">
+            <div class="ef-field-error">Please enter a valid phone number.</div>
+          </div>
+        </div>
+
+        <div class="ef-field" id="f-email">
+          <label for="inp-email">Email Address</label>
+          <input type="email" id="inp-email" placeholder="jane@example.com" autocomplete="email">
+          <div class="ef-field-error">Please enter a valid email address.</div>
+        </div>
+
+        <div class="ef-field" id="f-referral">
+          <label for="inp-referral">How Did You Hear About This Event?</label>
+          <div class="ef-select-wrap">
+            <select id="inp-referral">
+              <option value="">&#8212; Please select &#8212;</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Friend / Word of Mouth">Friend / Word of Mouth</option>
+              <option value="Google">Google</option>
+              <option value="Existing Client">Existing Client</option>
+              <option value="Email Newsletter">Email Newsletter</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="ef-field-error">Please select how you heard about us.</div>
+        </div>
+
+        <button type="submit" class="ef-submit" id="ef-submit">Reserve My Spot</button>
+      </form>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="ef-sidebar">
+      <div class="ef-info-card">
+        <h3>Event Details</h3>
+
+        <div class="ef-detail-row">
+          <span class="ef-detail-icon">&#128197;</span>
+          <div class="ef-detail-content">
+            <div class="ef-detail-label">Date &amp; Time</div>
+            <div class="ef-detail-value" id="sb-datetime">&mdash;</div>
+          </div>
+        </div>
+
+        <div class="ef-detail-row">
+          <span class="ef-detail-icon">&#128205;</span>
+          <div class="ef-detail-content">
+            <div class="ef-detail-label">Location</div>
+            <div class="ef-detail-value">
+              5500 San Mateo Blvd NE, Suite 102<br>
+              Albuquerque, NM 87109
+            </div>
+          </div>
+        </div>
+
+        <div class="ef-detail-row">
+          <span class="ef-detail-icon">&#9200;</span>
+          <div class="ef-detail-content">
+            <div class="ef-detail-label">Register By</div>
+            <div class="ef-detail-value" id="sb-deadline">&mdash;</div>
+          </div>
+        </div>
+
+        <div class="ef-detail-row">
+          <span class="ef-detail-icon">&#127995;</span>
+          <div class="ef-detail-content">
+            <div class="ef-detail-label">Extras</div>
+            <div class="ef-detail-value">Complimentary refreshments &amp; light bites</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ef-clearance-card" id="sb-clearance" style="display:none">
+        <h3>Medical Notice</h3>
+        <p id="sb-clearance-text"></p>
+      </div>
+
+      <div class="ef-seats">
+        <div class="ef-seats-dot"></div>
+        <div class="ef-seats-text"><strong>Spots are limited</strong> &mdash; secure yours now.</div>
+      </div>
+    </aside>
+
   </div>
 </div>
+
+<footer class="ef-footer">
+  &copy; 2025 Nursify Aesthetics &amp; Wellness &nbsp;&middot;&nbsp;
+  <a href="tel:+15055007900">(505) 500-7900</a> &nbsp;&middot;&nbsp;
+  5500 San Mateo Blvd NE, Suite 102, Albuquerque, NM 87109
+</footer>
 
 <script>
-// ── Config ──────────────────────────────────────────────────────────
-var API_BASE_URL = '';   // leave empty to use same origin
+var API_BASE_URL = '';
 
-// ── State ───────────────────────────────────────────────────────────
-var currentEvent = null;
-var events = [];
-
-function fmt(iso) {
-  if (!iso) return '';
+function fmtDate(iso) {
+  if (!iso) return '—';
   var d = new Date(iso);
   return d.toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -276,121 +601,134 @@ function fmt(iso) {
   });
 }
 
-function showError(msg) {
-  var el = document.getElementById('form-error');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function clearError() {
-  var el = document.getElementById('form-error');
-  el.textContent = '';
-  el.style.display = 'none';
+function fmtDeadline(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+  });
 }
 
 function renderEvent(ev) {
-  currentEvent = ev;
-  document.getElementById('ev-name').textContent = ev.name;
-  document.getElementById('ev-date').textContent = fmt(ev.event_date);
-  document.getElementById('ev-deadline').textContent = fmt(ev.registration_deadline);
-
-  var cn = document.getElementById('ev-clearance');
-  if (ev.medical_clearance_note) {
-    cn.textContent = ev.medical_clearance_note;
-    cn.style.display = 'block';
+  var titleEl = document.getElementById('ef-hero-title');
+  var words = ev.name.split(' ');
+  if (words.length > 1) {
+    var last = words.pop();
+    titleEl.innerHTML = words.join(' ') + ' <em>' + last + '</em>';
   } else {
-    cn.style.display = 'none';
+    titleEl.textContent = ev.name;
   }
-  document.getElementById('event-info').style.display = 'block';
+
+  if (ev.description) {
+    document.getElementById('ef-hero-desc').textContent = ev.description;
+  } else {
+    document.getElementById('ef-hero-desc').style.display = 'none';
+  }
+
+  var pills = document.getElementById('ef-pills');
+  ['Neuromodulators', 'Exclusive Pricing', 'Expert Injectors', 'Limited Spots'].forEach(function(l) {
+    var span = document.createElement('span');
+    span.className = 'ef-pill';
+    span.textContent = l;
+    pills.appendChild(span);
+  });
+
+  var flyerWrap = document.getElementById('ef-hero-flyer');
+  if (ev.flyer_url) {
+    var img = document.createElement('img');
+    img.src = ev.flyer_url;
+    img.alt = ev.name + ' flyer';
+    flyerWrap.appendChild(img);
+  } else {
+    var ph = document.createElement('div');
+    ph.className = 'ef-flyer-placeholder';
+    ph.innerHTML = '<div class="fp-icon">🌸</div><div class="fp-text">Event Flyer Coming Soon</div>';
+    flyerWrap.appendChild(ph);
+  }
+  flyerWrap.style.display = 'block';
+
+  document.getElementById('sb-datetime').textContent = fmtDate(ev.event_date);
+  document.getElementById('sb-deadline').textContent  = fmtDeadline(ev.registration_deadline);
+
+  if (ev.medical_clearance_note) {
+    document.getElementById('sb-clearance-text').textContent = ev.medical_clearance_note;
+    document.getElementById('sb-clearance').style.display = 'block';
+  }
+
+  document.getElementById('ef-hero').style.display = 'block';
+  document.getElementById('ef-wrap').style.display  = 'block';
 }
 
 function loadEvents() {
   fetch(API_BASE_URL + '/events/active')
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      events = data.events || [];
-      document.getElementById('loading-state').style.display = 'none';
-      document.getElementById('form-state').style.display = 'block';
-
-      if (events.length === 0) {
-        document.getElementById('form-state').innerHTML =
-          '<p style="text-align:center;padding:24px;font-size:13px;color:#999;">No events are currently open for registration.</p>';
+      document.getElementById('ef-loading').style.display = 'none';
+      var events = data.events || [];
+      if (!events.length) {
+        document.getElementById('ef-error').style.display = 'block';
         return;
       }
-
-      if (events.length === 1) {
-        renderEvent(events[0]);
-      } else {
-        var sel = document.getElementById('event-select');
-        events.forEach(function(ev) {
-          var opt = document.createElement('option');
-          opt.value = ev.id;
-          opt.textContent = ev.name + ' — ' + new Date(ev.event_date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-          sel.appendChild(opt);
-        });
-        document.getElementById('event-selector').style.display = 'block';
-        sel.addEventListener('change', function() {
-          var ev = events.find(function(e) { return e.id === sel.value; });
-          if (ev) renderEvent(ev);
-        });
-      }
+      window._eventId = events[0].id;
+      renderEvent(events[0]);
     })
     .catch(function() {
-      document.getElementById('loading-state').textContent = 'Could not load events. Please try again later.';
+      document.getElementById('ef-loading').style.display = 'none';
+      document.getElementById('ef-error').style.display = 'block';
     });
 }
 
-document.getElementById('reg-form').addEventListener('submit', function(e) {
+function validateField(id, test) {
+  var wrap = document.getElementById(id);
+  var ok = test();
+  wrap.classList.toggle('has-error', !ok);
+  return ok;
+}
+
+function validate() {
+  var ok = true;
+  ok = validateField('f-name',     function() { return document.getElementById('inp-name').value.trim().length >= 2; }) && ok;
+  ok = validateField('f-dob',      function() { return !!document.getElementById('inp-dob').value; }) && ok;
+  ok = validateField('f-phone',    function() { return document.getElementById('inp-phone').value.replace(/\D/g,'').length >= 10; }) && ok;
+  ok = validateField('f-email',    function() { var v = document.getElementById('inp-email').value; return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }) && ok;
+  ok = validateField('f-referral', function() { return !!document.getElementById('inp-referral').value; }) && ok;
+  return ok;
+}
+
+document.getElementById('ef-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  clearError();
+  if (!validate()) return;
 
-  if (!currentEvent) { showError('Please select an event.'); return; }
-
-  var name     = document.getElementById('f-name').value.trim();
-  var dob      = document.getElementById('f-dob').value;
-  var phone    = document.getElementById('f-phone').value.trim();
-  var email    = document.getElementById('f-email').value.trim();
-  var referral = document.getElementById('f-referral').value;
-
-  if (!name || !dob || !phone || !email || !referral) {
-    showError('Please fill in all fields before submitting.');
-    return;
-  }
-
-  var btn = document.getElementById('submit-btn');
+  var btn = document.getElementById('ef-submit');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
-  fetch(API_BASE_URL + '/events/' + currentEvent.id + '/register', {
-    method: 'POST',
+  var payload = {
+    full_name:       document.getElementById('inp-name').value.trim(),
+    dob:             document.getElementById('inp-dob').value,
+    phone:           document.getElementById('inp-phone').value.trim(),
+    email:           document.getElementById('inp-email').value.trim(),
+    referral_source: document.getElementById('inp-referral').value
+  };
+
+  fetch(API_BASE_URL + '/events/' + window._eventId + '/register', {
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      full_name:       name,
-      dob:             dob,
-      phone:           phone,
-      email:           email,
-      referral_source: referral,
-    }),
+    body:    JSON.stringify(payload)
   })
-  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-  .then(function(res) {
-    if (res.ok) {
-      document.getElementById('form-state').style.display = 'none';
-      document.getElementById('success-event-name').textContent = currentEvent.name;
-      document.getElementById('success-event-date').textContent =
-        new Date(currentEvent.event_date).toLocaleDateString('en-US', {
-          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-        });
-      document.getElementById('success-state').style.display = 'block';
-    } else {
-      btn.disabled = false;
-      btn.textContent = 'Register for Event';
-      showError(res.data.detail || 'Registration failed. Please try again.');
-    }
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(d) { throw new Error(d.detail || 'Registration failed'); });
+    return r.json();
+  })
+  .then(function() {
+    document.getElementById('ef-form').style.display = 'none';
+    document.getElementById('ef-success').style.display = 'block';
   })
   .catch(function(err) {
     btn.disabled = false;
-    btn.textContent = 'Register for Event';
-    showError('Network error. Please check your connection and try again.');
+    btn.textContent = 'Reserve My Spot';
+    alert('Registration error: ' + err.message);
   });
 });
 

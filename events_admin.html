@@ -47,6 +47,10 @@ textarea { resize:vertical; min-height:80px; line-height:1.5; }
 .btn-secondary:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
 .btn-danger { background:#fff; color:#c0392b; border:1px solid rgba(192,57,43,0.25); }
 .btn-danger:hover:not(:disabled) { background:#fff0f0; }
+.btn-archive { background:#fff; color:#8b6914; border:1px solid rgba(139,105,20,0.25); }
+.btn-archive:hover:not(:disabled) { background:#fffbf0; }
+.badge-archived { background:rgba(139,105,20,0.10); color:#8b6914; }
+.row-archived td { opacity:0.55; }
 .btn-full { width:100%; justify-content:center; padding:13px; }
 .alert { padding:10px 14px; border-radius:var(--radius); font-size:12px; margin-bottom:14px; }
 .alert-error { background:#fff0f4; border:1px solid rgba(212,83,143,0.3); color:#c0392b; }
@@ -135,7 +139,13 @@ tr:hover td { background:rgba(255,105,180,0.02); }
       <div class="panel">
         <div class="panel-head">
           <h2>All Events</h2>
-          <span id="event-count" style="font-size:12px;color:#bbb;"></span>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text);cursor:pointer;user-select:none;">
+              <input type="checkbox" id="show-archived-toggle" style="accent-color:var(--accent);width:14px;height:14px;">
+              Show archived
+            </label>
+            <span id="event-count" style="font-size:12px;color:#bbb;"></span>
+          </div>
         </div>
         <div class="panel-body table-wrap">
           <table id="events-table">
@@ -179,10 +189,11 @@ tr:hover td { background:rgba(255,105,180,0.02); }
                 <th>Email</th>
                 <th>Referral</th>
                 <th>Registered</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="regs-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:32px;color:#bbb;">Select an event to view registrations.</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:32px;color:#bbb;">Select an event to view registrations.</td></tr>
             </tbody>
           </table>
         </div>
@@ -220,6 +231,10 @@ tr:hover td { background:rgba(255,105,180,0.02); }
       <div class="field">
         <label for="m-clearance">Medical Clearance Note (optional)</label>
         <textarea id="m-clearance" placeholder="Medical clearance required by…"></textarea>
+      </div>
+      <div class="field">
+        <label for="m-flyer-url">Flyer Image URL (optional)</label>
+        <input type="text" id="m-flyer-url" placeholder="https://…">
       </div>
       <div class="field">
         <label for="m-active">Status</label>
@@ -315,7 +330,8 @@ document.getElementById('logout-btn').addEventListener('click', function() {
 
 // ── Events list ──────────────────────────────────────────────────────
 function loadEvents() {
-  apiFetch('/events/admin/list')
+  var includeArchived = document.getElementById('show-archived-toggle').checked;
+  apiFetch('/events/admin/list' + (includeArchived ? '?include_archived=true' : ''))
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var events = data.events || [];
@@ -326,29 +342,48 @@ function loadEvents() {
         return;
       }
       tbody.innerHTML = events.map(function(ev) {
-        return '<tr>' +
-          '<td style="font-weight:500;color:' + (ev.active ? 'var(--dark)' : '#bbb') + '">' + esc(ev.name) + '</td>' +
+        var statusBadge = ev.archived
+          ? '<span class="badge badge-archived">Archived</span>'
+          : ev.active
+            ? '<span class="badge badge-active">Active</span>'
+            : '<span class="badge badge-inactive">Inactive</span>';
+        var actions = ev.archived
+          ? '<button class="btn btn-secondary" onclick="viewRegs(\'' + ev.id + '\', \'' + esc(ev.name) + '\')">Registrations</button>'
+          : '<button class="btn btn-secondary" onclick="openEdit(\'' + ev.id + '\')">Edit</button>' +
+            '<button class="btn btn-secondary" onclick="viewRegs(\'' + ev.id + '\', \'' + esc(ev.name) + '\')">Registrations</button>' +
+            '<button class="btn btn-danger" onclick="toggleActive(\'' + ev.id + '\',' + !ev.active + ')">' + (ev.active ? 'Deactivate' : 'Activate') + '</button>' +
+            '<button class="btn btn-archive" onclick="archiveEvent(\'' + ev.id + '\', \'' + esc(ev.name) + '\')">Archive</button>';
+        return '<tr class="' + (ev.archived ? 'row-archived' : '') + '">' +
+          '<td style="font-weight:500;color:' + (ev.archived ? '#bbb' : ev.active ? 'var(--dark)' : '#bbb') + '">' + esc(ev.name) + '</td>' +
           '<td>' + fmt(ev.event_date) + '</td>' +
           '<td>' + fmt(ev.registration_deadline) + '</td>' +
           '<td style="text-align:center;">' + (ev.registration_count || 0) + '</td>' +
-          '<td><span class="badge ' + (ev.active ? 'badge-active' : 'badge-inactive') + '">' + (ev.active ? 'Active' : 'Inactive') + '</span></td>' +
-          '<td><div class="table-actions">' +
-            '<button class="btn btn-secondary" onclick="openEdit(\'' + ev.id + '\')">Edit</button>' +
-            '<button class="btn btn-secondary" onclick="viewRegs(\'' + ev.id + '\', \'' + esc(ev.name) + '\')">Registrations</button>' +
-            '<button class="btn btn-danger" onclick="toggleActive(\'' + ev.id + '\',' + !ev.active + ')">' + (ev.active ? 'Deactivate' : 'Activate') + '</button>' +
-          '</div></td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td><div class="table-actions">' + actions + '</div></td>' +
         '</tr>';
       }).join('');
     })
-    .catch(function(e) {
+    .catch(function() {
       document.getElementById('events-tbody').innerHTML =
         '<tr><td colspan="6" style="text-align:center;color:#c0392b;padding:24px;">Failed to load events.</td></tr>';
     });
 }
 
+document.getElementById('show-archived-toggle').addEventListener('change', loadEvents);
+
 function toggleActive(id, active) {
   apiFetch('/events/admin/' + id, { method:'PATCH', json:{ active: active } })
     .then(function() { loadEvents(); });
+}
+
+function archiveEvent(id, name) {
+  if (!confirm('Archive "' + name + '"?\n\nArchived events are hidden from the list and closed to new registrations. You can still view their registrations.')) return;
+  apiFetch('/events/admin/' + id + '/archive', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) loadEvents();
+      else alert('Archive failed: ' + (res.detail || 'Unknown error'));
+    });
 }
 
 // ── Registrations ────────────────────────────────────────────────────
@@ -358,7 +393,7 @@ function viewRegs(eventId, eventName) {
   document.getElementById('regs-panel').style.display = 'block';
   document.getElementById('regs-title').textContent = 'Registrations — ' + eventName;
   document.getElementById('regs-tbody').innerHTML =
-    '<tr><td colspan="7" style="text-align:center;padding:32px;color:#bbb;">Loading&hellip;</td></tr>';
+    '<tr><td colspan="8" style="text-align:center;padding:32px;color:#bbb;">Loading&hellip;</td></tr>';
   document.getElementById('regs-count').textContent = '';
 
   apiFetch('/events/admin/' + eventId + '/registrations')
@@ -368,11 +403,11 @@ function viewRegs(eventId, eventName) {
       document.getElementById('regs-count').textContent = regs.length + ' registration' + (regs.length !== 1 ? 's' : '');
       var tbody = document.getElementById('regs-tbody');
       if (!regs.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#bbb;">No registrations yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#bbb;">No registrations yet.</td></tr>';
         return;
       }
       tbody.innerHTML = regs.map(function(r, i) {
-        return '<tr>' +
+        return '<tr id="reg-row-' + r.id + '">' +
           '<td style="color:#bbb;">' + (i + 1) + '</td>' +
           '<td style="font-weight:500;color:var(--dark)">' + esc(r.full_name) + '</td>' +
           '<td>' + fmtDate(r.dob) + '</td>' +
@@ -380,8 +415,36 @@ function viewRegs(eventId, eventName) {
           '<td>' + esc(r.email) + '</td>' +
           '<td>' + esc(r.referral_source) + '</td>' +
           '<td style="color:#bbb;">' + fmt(r.created_at) + '</td>' +
+          '<td><button class="btn btn-danger" onclick="deleteReg(\'' + r.id + '\', \'' + esc(r.full_name) + '\')">Delete</button></td>' +
         '</tr>';
       }).join('');
+    });
+}
+
+function deleteReg(regId, name) {
+  if (!confirm('Delete registration for "' + name + '"? This cannot be undone.')) return;
+  var btn = document.querySelector('[onclick="deleteReg(\'' + regId + '\', \'' + name.replace(/'/g, "\\'") + '\')"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  apiFetch('/events/admin/registrations/' + regId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        var row = document.getElementById('reg-row-' + regId);
+        if (row) { row.style.opacity = '0'; setTimeout(function() { row.remove(); }, 250); }
+        var countEl = document.getElementById('regs-count');
+        var m = countEl.textContent.match(/(\d+)/);
+        if (m) {
+          var n = Math.max(0, parseInt(m[1]) - 1);
+          countEl.textContent = n + ' registration' + (n !== 1 ? 's' : '');
+        }
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+        alert('Delete failed: ' + (res.detail || 'Unknown error'));
+      }
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+      alert('Network error.');
     });
 }
 
@@ -417,6 +480,7 @@ function closeModal() {
   document.getElementById('m-deadline').value = '';
   document.getElementById('m-description').value = '';
   document.getElementById('m-clearance').value = '';
+  document.getElementById('m-flyer-url').value = '';
   document.getElementById('m-active').value = 'true';
 }
 function modalAlert(msg, type) {
@@ -456,6 +520,7 @@ function openEdit(id) {
       document.getElementById('m-deadline').value = toLocalDT(ev.registration_deadline);
       document.getElementById('m-description').value = ev.description || '';
       document.getElementById('m-clearance').value = ev.medical_clearance_note || '';
+      document.getElementById('m-flyer-url').value = ev.flyer_url || '';
       document.getElementById('m-active').value = ev.active ? 'true' : 'false';
       openModal();
     });
@@ -482,6 +547,7 @@ document.getElementById('modal-save-btn').addEventListener('click', function() {
     registration_deadline: new Date(deadline).toISOString(),
     description:           document.getElementById('m-description').value.trim() || null,
     medical_clearance_note: document.getElementById('m-clearance').value.trim() || null,
+    flyer_url:             document.getElementById('m-flyer-url').value.trim() || null,
     active:                document.getElementById('m-active').value === 'true',
   };
 
