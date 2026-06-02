@@ -4,8 +4,9 @@ FastAPI + Anthropic Claude Haiku
 Deploy on Railway — set ANTHROPIC_API_KEY in environment variables
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from typing import List
 import anthropic
@@ -149,7 +150,10 @@ async def startup_event():
 
 # ── Routes ─────────────────────────────────────────────────────────────
 @app.get("/")
-async def root():
+async def root(request: Request):
+    host = request.headers.get("host", "")
+    if "events" in host:
+        return RedirectResponse(url="/events/form", status_code=302)
     return {"status": "Nursify Chat API is running"}
 
 @app.get("/health")

@@ -233,6 +233,10 @@ tr:hover td { background:rgba(255,105,180,0.02); }
         <textarea id="m-clearance" placeholder="Medical clearance required by…"></textarea>
       </div>
       <div class="field">
+        <label for="m-flyer-url">Flyer Image URL (optional)</label>
+        <input type="text" id="m-flyer-url" placeholder="https://…">
+      </div>
+      <div class="field">
         <label for="m-active">Status</label>
         <select id="m-active">
           <option value="true">Active — accepting registrations</option>
@@ -476,6 +480,7 @@ function closeModal() {
   document.getElementById('m-deadline').value = '';
   document.getElementById('m-description').value = '';
   document.getElementById('m-clearance').value = '';
+  document.getElementById('m-flyer-url').value = '';
   document.getElementById('m-active').value = 'true';
 }
 function modalAlert(msg, type) {
@@ -515,6 +520,7 @@ function openEdit(id) {
       document.getElementById('m-deadline').value = toLocalDT(ev.registration_deadline);
       document.getElementById('m-description').value = ev.description || '';
       document.getElementById('m-clearance').value = ev.medical_clearance_note || '';
+      document.getElementById('m-flyer-url').value = ev.flyer_url || '';
       document.getElementById('m-active').value = ev.active ? 'true' : 'false';
       openModal();
     });
@@ -541,6 +547,7 @@ document.getElementById('modal-save-btn').addEventListener('click', function() {
     registration_deadline: new Date(deadline).toISOString(),
     description:           document.getElementById('m-description').value.trim() || null,
     medical_clearance_note: document.getElementById('m-clearance').value.trim() || null,
+    flyer_url:             document.getElementById('m-flyer-url').value.trim() || null,
     active:                document.getElementById('m-active').value === 'true',
   };
 

@@ -72,6 +72,10 @@ def init_events_db():
             ALTER TABLE events_events
             ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;
         """)
+        cur.execute("""
+            ALTER TABLE events_events
+            ADD COLUMN IF NOT EXISTS flyer_url TEXT;
+        """)
         con.commit()
         cur.close()
         con.close()
@@ -179,6 +183,7 @@ class EventCreate(BaseModel):
     registration_deadline: str
     description:           Optional[str] = None
     medical_clearance_note: Optional[str] = None
+    flyer_url:             Optional[str] = None
     active:                bool = True
 
 
@@ -188,6 +193,7 @@ class EventPatch(BaseModel):
     registration_deadline: Optional[str] = None
     description:           Optional[str] = None
     medical_clearance_note: Optional[str] = None
+    flyer_url:             Optional[str] = None
     active:                Optional[bool] = None
 
 
@@ -202,7 +208,7 @@ def list_active_events():
         cur = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT id, name, event_date, registration_deadline,
-                   description, medical_clearance_note
+                   description, medical_clearance_note, flyer_url
             FROM events_events
             WHERE active = TRUE AND archived = FALSE
             ORDER BY event_date ASC
@@ -235,7 +241,7 @@ def get_event(event_id: str):
         cur = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT id, name, event_date, registration_deadline,
-                   description, medical_clearance_note, active
+                   description, medical_clearance_note, flyer_url, active
             FROM events_events WHERE id = %s
         """, (event_id,))
         row = cur.fetchone()
@@ -394,8 +400,8 @@ def admin_create_event(body: EventCreate, _: str = Depends(require_admin)):
         cur.execute("""
             INSERT INTO events_events
                 (name, event_date, registration_deadline, description,
-                 medical_clearance_note, active)
-            VALUES (%s, %s, %s, %s, %s, %s)
+                 medical_clearance_note, flyer_url, active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id, name, event_date, registration_deadline, active, created_at
         """, (
             body.name,
@@ -403,6 +409,7 @@ def admin_create_event(body: EventCreate, _: str = Depends(require_admin)):
             body.registration_deadline,
             body.description,
             body.medical_clearance_note,
+            body.flyer_url,
             body.active,
         ))
         row = dict(cur.fetchone())
