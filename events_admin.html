@@ -179,10 +179,11 @@ tr:hover td { background:rgba(255,105,180,0.02); }
                 <th>Email</th>
                 <th>Referral</th>
                 <th>Registered</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="regs-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:32px;color:#bbb;">Select an event to view registrations.</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:32px;color:#bbb;">Select an event to view registrations.</td></tr>
             </tbody>
           </table>
         </div>
@@ -358,7 +359,7 @@ function viewRegs(eventId, eventName) {
   document.getElementById('regs-panel').style.display = 'block';
   document.getElementById('regs-title').textContent = 'Registrations — ' + eventName;
   document.getElementById('regs-tbody').innerHTML =
-    '<tr><td colspan="7" style="text-align:center;padding:32px;color:#bbb;">Loading&hellip;</td></tr>';
+    '<tr><td colspan="8" style="text-align:center;padding:32px;color:#bbb;">Loading&hellip;</td></tr>';
   document.getElementById('regs-count').textContent = '';
 
   apiFetch('/events/admin/' + eventId + '/registrations')
@@ -368,11 +369,11 @@ function viewRegs(eventId, eventName) {
       document.getElementById('regs-count').textContent = regs.length + ' registration' + (regs.length !== 1 ? 's' : '');
       var tbody = document.getElementById('regs-tbody');
       if (!regs.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#bbb;">No registrations yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#bbb;">No registrations yet.</td></tr>';
         return;
       }
       tbody.innerHTML = regs.map(function(r, i) {
-        return '<tr>' +
+        return '<tr id="reg-row-' + r.id + '">' +
           '<td style="color:#bbb;">' + (i + 1) + '</td>' +
           '<td style="font-weight:500;color:var(--dark)">' + esc(r.full_name) + '</td>' +
           '<td>' + fmtDate(r.dob) + '</td>' +
@@ -380,8 +381,36 @@ function viewRegs(eventId, eventName) {
           '<td>' + esc(r.email) + '</td>' +
           '<td>' + esc(r.referral_source) + '</td>' +
           '<td style="color:#bbb;">' + fmt(r.created_at) + '</td>' +
+          '<td><button class="btn btn-danger" onclick="deleteReg(\'' + r.id + '\', \'' + esc(r.full_name) + '\')">Delete</button></td>' +
         '</tr>';
       }).join('');
+    });
+}
+
+function deleteReg(regId, name) {
+  if (!confirm('Delete registration for "' + name + '"? This cannot be undone.')) return;
+  var btn = document.querySelector('[onclick="deleteReg(\'' + regId + '\', \'' + name.replace(/'/g, "\\'") + '\')"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  apiFetch('/events/admin/registrations/' + regId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        var row = document.getElementById('reg-row-' + regId);
+        if (row) { row.style.opacity = '0'; setTimeout(function() { row.remove(); }, 250); }
+        var countEl = document.getElementById('regs-count');
+        var m = countEl.textContent.match(/(\d+)/);
+        if (m) {
+          var n = Math.max(0, parseInt(m[1]) - 1);
+          countEl.textContent = n + ' registration' + (n !== 1 ? 's' : '');
+        }
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+        alert('Delete failed: ' + (res.detail || 'Unknown error'));
+      }
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+      alert('Network error.');
     });
 }
 

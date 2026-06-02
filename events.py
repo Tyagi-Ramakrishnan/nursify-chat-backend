@@ -433,3 +433,24 @@ def admin_list_registrations(
     except Exception as e:
         log.error(f"admin_list_registrations: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/admin/registrations/{registration_id}")
+def admin_delete_registration(registration_id: str, _: str = Depends(require_admin)):
+    if not DATABASE_URL:
+        raise HTTPException(status_code=503, detail="Database not configured")
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("DELETE FROM events_registrations WHERE id = %s", (registration_id,))
+        if cur.rowcount == 0:
+            cur.close(); con.close()
+            raise HTTPException(status_code=404, detail="Registration not found")
+        con.commit()
+        cur.close(); con.close()
+        return JSONResponse({"success": True, "deleted_id": registration_id})
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"admin_delete_registration: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
