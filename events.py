@@ -68,12 +68,52 @@ def init_events_db():
                 created_at      TIMESTAMPTZ DEFAULT NOW()
             );
         """)
+        cur.execute("""
+            ALTER TABLE events_events
+            ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;
+        """)
         con.commit()
         cur.close()
         con.close()
         log.info("events tables ready")
     except Exception as e:
         log.error(f"init_events_db failed: {e}")
+
+
+# ── Auto-archive ───────────────────────────────────────────────────────
+
+def auto_archive_past_events():
+    """Archive events whose event_date was more than 2 days ago. Runs nightly."""
+    if not DATABASE_URL:
+        return
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute("""
+            UPDATE events_events
+            SET archived = TRUE, active = FALSE
+            WHERE archived = FALSE
+              AND event_date < NOW() - INTERVAL '2 days'
+        """)
+        count = cur.rowcount
+        con.commit()
+        cur.close()
+        con.close()
+        if count:
+            log.info(f"Auto-archived {count} past event(s)")
+    except Exception as e:
+        log.error(f"auto_archive_past_events failed: {e}")
+
+
+def setup_events_scheduler(scheduler):
+    """Add the nightly auto-archive job to the shared APScheduler instance."""
+    from apscheduler.triggers.cron import CronTrigger
+    scheduler.add_job(
+        auto_archive_past_events,
+        CronTrigger(hour=8, minute=0),  # 2am MT (UTC-6)
+        id="events_auto_archive",
+        replace_existing=True,
+    )
 
 
 # ── Auth ───────────────────────────────────────────────────────────────
@@ -164,7 +204,7 @@ def list_active_events():
             SELECT id, name, event_date, registration_deadline,
                    description, medical_clearance_note
             FROM events_events
-            WHERE active = TRUE
+            WHERE active = TRUE AND archived = FALSE
             ORDER BY event_date ASC
         """)
         rows = [dict(r) for r in cur.fetchall()]
@@ -287,18 +327,24 @@ def admin_ui():
 
 
 @router.get("/admin/list")
-def admin_list_events(_: str = Depends(require_admin)):
+def admin_list_events(
+    include_archived: bool = Query(False),
+    _: str = Depends(require_admin),
+):
     if not DATABASE_URL:
         raise HTTPException(status_code=503, detail="Database not configured")
     try:
         con = get_db()
         cur = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("""
+        where = "" if include_archived else "WHERE e.archived = FALSE"
+        cur.execute(f"""
             SELECT e.id, e.name, e.event_date, e.registration_deadline,
-                   e.description, e.medical_clearance_note, e.active, e.created_at,
+                   e.description, e.medical_clearance_note, e.active,
+                   e.archived, e.created_at,
                    COUNT(r.id) AS registration_count
             FROM events_events e
             LEFT JOIN events_registrations r ON r.event_id = e.id
+            {where}
             GROUP BY e.id
             ORDER BY e.event_date DESC
         """)
@@ -311,6 +357,30 @@ def admin_list_events(_: str = Depends(require_admin)):
         return JSONResponse({"events": rows})
     except Exception as e:
         log.error(f"admin_list_events: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/{event_id}/archive")
+def admin_archive_event(event_id: str, _: str = Depends(require_admin)):
+    if not DATABASE_URL:
+        raise HTTPException(status_code=503, detail="Database not configured")
+    try:
+        con = get_db()
+        cur = con.cursor()
+        cur.execute(
+            "UPDATE events_events SET archived = TRUE, active = FALSE WHERE id = %s",
+            (event_id,),
+        )
+        if cur.rowcount == 0:
+            cur.close(); con.close()
+            raise HTTPException(status_code=404, detail="Event not found")
+        con.commit()
+        cur.close(); con.close()
+        return JSONResponse({"success": True, "id": event_id})
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"admin_archive_event: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
