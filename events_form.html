@@ -3,394 +3,960 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Event Registration — Nursify Aesthetics</title>
+<title>Event Registration — Nursify Aesthetics &amp; Wellness</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ============================================================
+   NURSIFY — Event Form Page CSS
+   Design system: Cormorant Garamond + Montserrat
+   Matches luxury-concierge.css visual language exactly
+   ============================================================ */
+
+/* ── Variables ─────────────────────────────────────────────── */
 :root {
-  --accent:   #ff69b4;
-  --deep:     #d4538f;
-  --bg:       #fdf8f9;
-  --text:     #6b6065;
-  --dark:     #2a2a2a;
-  --border:   rgba(255,105,180,0.18);
-  --radius:   4px;
-  --shadow:   0 2px 4px rgba(0,0,0,0.06);
+    --gold:         #c9a96e;
+    --gold-light:   #e8d5b0;
+    --gold-dark:    #a07840;
+    --pink:         #ff69b4;
+    --pink-light:   #ffb6c1;
+    --pink-dark:    #d4538f;
+    --rose-deep:    #2a0d18;
+    --rose-mid:     #3d1428;
+    --ivory:        #fdf8f9;
+    --blush:        #fff0f5;
+    --warm-gray:    #6b6065;
+    --charcoal:     #2a2a2a;
+    --white:        #ffffff;
 }
-body {
-  font-family: 'Montserrat', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40px 16px 60px;
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body.event-form-page {
+    font-family: 'Montserrat', Arial, sans-serif;
+    background: var(--ivory);
+    color: var(--charcoal);
 }
-.logo-bar {
-  text-align: center;
-  margin-bottom: 32px;
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.ef-hero {
+    background: linear-gradient(160deg, var(--rose-deep) 0%, var(--rose-mid) 100%);
+    padding: 80px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
-.logo-bar h1 {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--dark);
-  letter-spacing: 0.04em;
+
+.ef-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 60% 40%, rgba(255,105,180,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 80%, rgba(201,169,110,0.10) 0%, transparent 50%);
+    pointer-events: none;
 }
-.logo-bar p {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-top: 4px;
+
+.ef-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.035;
+    background-image: repeating-linear-gradient(
+        45deg, var(--gold) 0, var(--gold) 1px, transparent 0, transparent 50%
+    );
+    background-size: 20px 20px;
+    pointer-events: none;
 }
-.card {
-  background: #fff;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-  width: 100%;
-  max-width: 520px;
-  padding: 36px 32px;
+
+.ef-hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
 }
-#event-selector { margin-bottom: 24px; }
-#event-selector label {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text);
-  margin-bottom: 7px;
+
+.ef-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--pink-light);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
-select, input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
-  width: 100%;
-  padding: 11px 13px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  color: var(--dark);
-  background: #fafafa;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+
+.ef-eyebrow::before,
+.ef-eyebrow::after {
+    content: '';
+    display: block;
+    height: 1px;
+    width: 28px;
+    background: linear-gradient(90deg, transparent, var(--pink-light));
+    opacity: 0.6;
 }
-select:focus, input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255,105,180,0.10);
-  background: #fff;
+
+.ef-hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.2rem;
+    font-weight: 300;
+    color: var(--ivory);
+    line-height: 1.15;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
 }
-.event-info { margin-bottom: 28px; }
-.event-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 28px;
-  font-weight: 500;
-  color: var(--dark);
-  margin-bottom: 12px;
-  line-height: 1.2;
+
+.ef-hero h1 em {
+    font-style: italic;
+    color: var(--pink-light);
 }
-.event-meta {
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.8;
+
+.ef-hero-desc {
+    font-size: 1rem;
+    color: rgba(253,248,249,0.68);
+    line-height: 1.85;
+    font-weight: 300;
+    max-width: 540px;
+    margin: 0 auto 36px;
 }
-.event-meta strong { color: var(--dark); font-weight: 600; }
-.clearance-note {
-  margin-top: 12px;
-  padding: 12px 14px;
-  background: rgba(255,105,180,0.05);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.7;
+
+/* ── Divider ───────────────────────────────────────────────── */
+.ef-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--pink), var(--gold), transparent);
+    margin: 0 auto 32px;
 }
-.divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 24px 0;
+
+/* ── Event detail pills ────────────────────────────────────── */
+.ef-event-meta {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 0;
 }
-.field { margin-bottom: 18px; }
-.field label {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text);
-  margin-bottom: 7px;
+
+.ef-meta-pill {
+    background: rgba(255,240,245,0.08);
+    border: 1px solid rgba(255,105,180,0.28);
+    border-radius: 2px;
+    padding: 8px 18px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--pink-light);
+    display: flex;
+    align-items: center;
+    gap: 7px;
 }
-.field .hint {
-  font-size: 11px;
-  color: #bbb;
-  margin-top: 5px;
+
+/* ── Page layout ───────────────────────────────────────────── */
+.ef-layout {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 64px 24px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 48px;
+    align-items: start;
 }
-.btn-submit {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--deep) 100%);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius);
-  font-family: 'Montserrat', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: opacity 0.2s;
+
+/* ── Form card ─────────────────────────────────────────────── */
+.ef-form-card {
+    background: var(--white);
+    border-radius: 4px;
+    border: 1px solid rgba(255,105,180,0.12);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.06);
+    padding: 48px 44px;
 }
-.btn-submit:hover { opacity: 0.9; }
-.btn-submit:disabled { opacity: 0.55; cursor: default; }
-.msg-success {
-  text-align: center;
-  padding: 28px 24px;
+
+.ef-form-card h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--charcoal);
+    margin-bottom: 8px;
+    line-height: 1.2;
 }
-.msg-success .check {
-  font-size: 36px;
-  margin-bottom: 14px;
+
+.ef-form-card .ef-form-subtitle {
+    font-size: 0.9rem;
+    color: var(--warm-gray);
+    font-weight: 300;
+    line-height: 1.7;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid rgba(255,105,180,0.12);
 }
-.msg-success h2 {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--dark);
-  margin-bottom: 10px;
+
+/* ── Form fields ───────────────────────────────────────────── */
+.ef-field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
-.msg-success p { font-size: 13px; line-height: 1.7; }
-.msg-success .event-label {
-  font-weight: 600;
-  color: var(--deep);
+
+.ef-field {
+    margin-bottom: 22px;
 }
-.alert-error {
-  background: #fff0f4;
-  border: 1px solid rgba(212,83,143,0.3);
-  border-radius: var(--radius);
-  padding: 11px 14px;
-  font-size: 12px;
-  color: #c0392b;
-  margin-bottom: 16px;
-  display: none;
+
+.ef-field.ef-field--full {
+    grid-column: 1 / -1;
 }
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: var(--text);
-  font-size: 13px;
+
+.ef-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    margin-bottom: 8px;
+}
+
+.ef-label .ef-required {
+    color: var(--pink);
+    margin-left: 3px;
+}
+
+.ef-input,
+.ef-select,
+.ef-textarea {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid rgba(107,96,101,0.22);
+    border-radius: 2px;
+    background: var(--white);
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 300;
+    color: var(--charcoal);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.ef-input::placeholder,
+.ef-textarea::placeholder {
+    color: rgba(107,96,101,0.45);
+    font-weight: 300;
+}
+
+.ef-input:focus,
+.ef-select:focus,
+.ef-textarea:focus {
+    outline: none;
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(255,105,180,0.1);
+}
+
+.ef-input:hover,
+.ef-select:hover,
+.ef-textarea:hover {
+    border-color: rgba(212,83,143,0.4);
+}
+
+.ef-select-wrap {
+    position: relative;
+}
+
+.ef-select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 5px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    background: var(--pink-dark);
+    pointer-events: none;
+}
+
+/* ── Form section divider ──────────────────────────────────── */
+.ef-form-section-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--pink);
+    margin: 28px 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ef-form-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,105,180,0.3), transparent);
+}
+
+/* ── Submit button ─────────────────────────────────────────── */
+.ef-submit {
+    width: 100%;
+    padding: 16px 36px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--pink-dark) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 2px;
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(201,169,110,0.22), 0 4px 20px rgba(255,105,180,0.14);
+}
+
+.ef-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(201,169,110,0.32), 0 8px 30px rgba(255,105,180,0.2);
+}
+
+.ef-submit:active { transform: translateY(0); }
+.ef-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.ef-form-disclaimer {
+    font-size: 0.75rem;
+    color: rgba(107,96,101,0.65);
+    text-align: center;
+    margin-top: 14px;
+    line-height: 1.6;
+    font-weight: 300;
+}
+
+/* ── Success / Error states ────────────────────────────────── */
+.ef-success {
+    display: none;
+    text-align: center;
+    padding: 48px 32px;
+}
+
+.ef-success.is-visible { display: block; }
+
+.ef-success-icon {
+    font-size: 2.4rem;
+    margin-bottom: 18px;
+}
+
+.ef-success h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--charcoal);
+    margin-bottom: 12px;
+}
+
+.ef-success p {
+    font-size: 0.92rem;
+    color: var(--warm-gray);
+    font-weight: 300;
+    line-height: 1.8;
+}
+
+.ef-field-error {
+    font-size: 0.75rem;
+    color: #c0392b;
+    font-weight: 500;
+    margin-top: 5px;
+    display: none;
+}
+
+.ef-field.has-error .ef-input,
+.ef-field.has-error .ef-select,
+.ef-field.has-error .ef-textarea {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.08);
+}
+
+.ef-field.has-error .ef-field-error { display: block; }
+
+.ef-alert-error {
+    background: #fff0f4;
+    border: 1px solid rgba(212,83,143,0.3);
+    border-radius: 2px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: #c0392b;
+    font-weight: 500;
+    margin-bottom: 20px;
+    display: none;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+.ef-sidebar { display: flex; flex-direction: column; gap: 24px; }
+
+.ef-info-card {
+    background: var(--white);
+    border-radius: 4px;
+    border: 1px solid rgba(255,105,180,0.12);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.ef-info-card-header {
+    background: linear-gradient(160deg, var(--rose-deep) 0%, var(--rose-mid) 100%);
+    padding: 22px 26px;
+}
+
+.ef-info-card-header h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    color: var(--ivory);
+    font-weight: 300;
+    margin-bottom: 4px;
+}
+
+.ef-info-card-header span {
+    font-size: 0.7rem;
+    color: var(--pink-light);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.ef-info-card-body { padding: 24px 26px; }
+
+.ef-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,105,180,0.1);
+}
+
+.ef-info-item:last-child { border-bottom: none; }
+
+.ef-info-icon {
+    color: var(--pink);
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+    width: 18px;
+    text-align: center;
+}
+
+.ef-info-text h4 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    margin-bottom: 3px;
+}
+
+.ef-info-text p {
+    font-size: 0.88rem;
+    color: var(--warm-gray);
+    font-weight: 300;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.ef-services-card {
+    background: var(--blush);
+    border-radius: 4px;
+    border: 1px solid rgba(255,105,180,0.15);
+    padding: 26px;
+}
+
+.ef-services-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    color: var(--charcoal);
+    font-weight: 400;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,105,180,0.18);
+}
+
+.ef-service-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ef-service-tag {
+    background: var(--white);
+    border: 1px solid rgba(255,105,180,0.2);
+    border-radius: 2px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--pink-dark);
+    text-transform: uppercase;
+}
+
+.ef-offer-card {
+    background: linear-gradient(160deg, var(--rose-deep) 0%, var(--rose-mid) 100%);
+    border-radius: 4px;
+    padding: 26px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ef-offer-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 20%, rgba(255,105,180,0.18) 0%, transparent 55%);
+    pointer-events: none;
+}
+
+.ef-offer-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    color: var(--ivory);
+    font-weight: 300;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.ef-offer-card p {
+    font-size: 0.88rem;
+    color: rgba(253,248,249,0.65);
+    font-weight: 300;
+    line-height: 1.7;
+    margin-bottom: 0;
+    position: relative;
+}
+
+.ef-seats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: var(--white);
+    border: 1px solid rgba(255,105,180,0.14);
+    border-radius: 2px;
+    margin-top: 18px;
+    position: relative;
+}
+
+.ef-seats-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pink);
+    flex-shrink: 0;
+    animation: ef-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ef-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.6; transform: scale(1.3); }
+}
+
+.ef-seats span { font-size: 0.8rem; color: var(--warm-gray); font-weight: 400; }
+.ef-seats strong { color: var(--pink-dark); font-weight: 600; }
+
+/* ── Loading / empty states ────────────────────────────────── */
+.ef-loading {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--warm-gray);
+    font-size: 0.9rem;
+    font-weight: 300;
+}
+
+/* ── Event selector (multiple events) ──────────────────────── */
+.ef-event-selector {
+    max-width: 1060px;
+    margin: 48px auto 0;
+    padding: 0 24px;
+}
+
+.ef-event-selector label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    margin-bottom: 8px;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .ef-layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 48px 20px;
+    }
+    .ef-sidebar {
+        order: -1;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    .ef-info-card { grid-column: 1 / -1; }
+}
+
+@media (max-width: 640px) {
+    .ef-hero h1        { font-size: 2.2rem; }
+    .ef-hero           { padding: 60px 20px; }
+    .ef-form-card      { padding: 32px 22px; }
+    .ef-field-group    { grid-template-columns: 1fr; }
+    .ef-sidebar        { grid-template-columns: 1fr; }
 }
 </style>
 </head>
-<body>
+<body class="event-form-page">
 
-<div class="logo-bar">
-  <h1>Nursify Aesthetics &amp; Wellness</h1>
-  <p>Event Registration</p>
+<!-- ── Hero (populated by JS) ──────────────────────────────── -->
+<section class="ef-hero" id="ef-hero" style="display:none">
+  <div class="ef-hero-inner">
+    <p class="ef-eyebrow">Nursify Aesthetics &amp; Wellness</p>
+    <h1 id="ef-hero-title">Event Registration</h1>
+    <p class="ef-hero-desc" id="ef-hero-desc"></p>
+    <div class="ef-divider"></div>
+    <div class="ef-event-meta" id="ef-event-meta"></div>
+  </div>
+</section>
+
+<!-- ── Event selector (shown only when multiple events) ─────── -->
+<div class="ef-event-selector" id="ef-selector-wrap" style="display:none">
+  <label for="ef-event-select">Select an event</label>
+  <div class="ef-select-wrap">
+    <select class="ef-select" id="ef-event-select"></select>
+  </div>
 </div>
 
-<div class="card" id="main-card">
-  <div class="loading" id="loading-state">Loading event&hellip;</div>
+<!-- ── Loading ───────────────────────────────────────────────── -->
+<div class="ef-loading" id="ef-loading">Loading event details&hellip;</div>
 
-  <div id="form-state" style="display:none">
-    <div id="event-selector" style="display:none">
-      <label for="event-select">Select an event</label>
-      <select id="event-select"></select>
+<!-- ── Main layout ───────────────────────────────────────────── -->
+<div class="ef-layout" id="ef-layout" style="display:none">
+
+  <!-- Form -->
+  <div class="ef-form-card">
+
+    <!-- Success state -->
+    <div class="ef-success" id="ef-success">
+      <div class="ef-success-icon">✦</div>
+      <h3>You&rsquo;re registered!</h3>
+      <p>We&rsquo;ve received your registration for <strong id="ef-success-event"></strong> on <span id="ef-success-date"></span>.<br>We&rsquo;ll be in touch with everything you need to know.</p>
     </div>
 
-    <div class="event-info" id="event-info" style="display:none">
-      <div class="event-name" id="ev-name"></div>
-      <div class="event-meta">
-        <div><strong>Date:</strong> <span id="ev-date"></span></div>
-        <div><strong>Registration deadline:</strong> <span id="ev-deadline"></span></div>
+    <!-- Form state -->
+    <div id="ef-form-wrap">
+      <h2>Secure Your Spot</h2>
+      <p class="ef-form-subtitle">Complete the form below to register. All fields are required. Registration closes at the deadline — spots are limited.</p>
+
+      <div class="ef-alert-error" id="ef-alert-error"></div>
+
+      <form id="ef-form" novalidate>
+        <p class="ef-form-section-label">Personal Information</p>
+
+        <div class="ef-field-group">
+          <div class="ef-field" id="field-name">
+            <label class="ef-label" for="ef-name">Full Name <span class="ef-required">*</span></label>
+            <input class="ef-input" type="text" id="ef-name" name="full_name" placeholder="Jane Smith" autocomplete="name" required>
+            <p class="ef-field-error">Please enter your full name.</p>
+          </div>
+          <div class="ef-field" id="field-dob">
+            <label class="ef-label" for="ef-dob">Date of Birth <span class="ef-required">*</span></label>
+            <input class="ef-input" type="date" id="ef-dob" name="dob" required>
+            <p class="ef-field-error">Please enter your date of birth.</p>
+          </div>
+        </div>
+
+        <div class="ef-field-group">
+          <div class="ef-field" id="field-phone">
+            <label class="ef-label" for="ef-phone">Phone Number <span class="ef-required">*</span></label>
+            <input class="ef-input" type="tel" id="ef-phone" name="phone" placeholder="(505) 555-0100" autocomplete="tel" required>
+            <p class="ef-field-error">Please enter your phone number.</p>
+          </div>
+          <div class="ef-field" id="field-email">
+            <label class="ef-label" for="ef-email">Email Address <span class="ef-required">*</span></label>
+            <input class="ef-input" type="email" id="ef-email" name="email" placeholder="jane@example.com" autocomplete="email" required>
+            <p class="ef-field-error">Please enter a valid email address.</p>
+          </div>
+        </div>
+
+        <p class="ef-form-section-label">How Did You Find Us</p>
+
+        <div class="ef-field ef-field--full" id="field-referral">
+          <label class="ef-label" for="ef-referral">Referral Source <span class="ef-required">*</span></label>
+          <div class="ef-select-wrap">
+            <select class="ef-select" id="ef-referral" name="referral_source" required>
+              <option value="" disabled selected>Select an option&hellip;</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Google Search">Google Search</option>
+              <option value="Friend/Referral">Friend / Referral</option>
+              <option value="Existing Client">Existing Client</option>
+              <option value="Flyer/Print">Flyer / Print</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <p class="ef-field-error">Please select how you heard about us.</p>
+        </div>
+
+        <button type="submit" class="ef-submit" id="ef-submit">Register for This Event</button>
+        <p class="ef-form-disclaimer">By registering, you consent to be contacted by Nursify Aesthetics &amp; Wellness regarding this event. New Mexico gross receipts tax applies to all services.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="ef-sidebar">
+
+    <!-- Event info card -->
+    <div class="ef-info-card">
+      <div class="ef-info-card-header">
+        <h3 id="sb-event-name">Event Details</h3>
+        <span>Nursify Aesthetics &amp; Wellness</span>
       </div>
-      <div class="clearance-note" id="ev-clearance" style="display:none"></div>
+      <div class="ef-info-card-body">
+        <div class="ef-info-item">
+          <div class="ef-info-icon">📅</div>
+          <div class="ef-info-text">
+            <h4>Date &amp; Time</h4>
+            <p id="sb-date">—</p>
+          </div>
+        </div>
+        <div class="ef-info-item">
+          <div class="ef-info-icon">⏰</div>
+          <div class="ef-info-text">
+            <h4>Registration Deadline</h4>
+            <p id="sb-deadline">—</p>
+          </div>
+        </div>
+        <div class="ef-info-item">
+          <div class="ef-info-icon">📍</div>
+          <div class="ef-info-text">
+            <h4>Location</h4>
+            <p>5500 San Mateo Blvd NE<br>Albuquerque, NM 87109</p>
+          </div>
+        </div>
+        <div class="ef-info-item" id="sb-clearance-item" style="display:none">
+          <div class="ef-info-icon">⚕️</div>
+          <div class="ef-info-text">
+            <h4>Medical Note</h4>
+            <p id="sb-clearance"></p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <hr class="divider">
+    <!-- Featured services -->
+    <div class="ef-services-card">
+      <h3>Featured Services</h3>
+      <div class="ef-service-tag-list">
+        <span class="ef-service-tag">DAXXIFY</span>
+        <span class="ef-service-tag">Botox</span>
+        <span class="ef-service-tag">Xeomin</span>
+        <span class="ef-service-tag">Lip Filler</span>
+        <span class="ef-service-tag">Dermal Fillers</span>
+        <span class="ef-service-tag">Wellness Shots</span>
+      </div>
+    </div>
 
-    <div class="alert-error" id="form-error"></div>
+    <!-- Special offer -->
+    <div class="ef-offer-card">
+      <h3>Exclusive Event Pricing</h3>
+      <p>Registered guests enjoy special event-only pricing and complimentary consultations with Thanisha Daniels, RN BSN — Certified Nurse Injector.</p>
+      <div class="ef-seats">
+        <div class="ef-seats-dot"></div>
+        <span>Spots are <strong>limited</strong> — register early to secure yours.</span>
+      </div>
+    </div>
 
-    <form id="reg-form" novalidate>
-      <div class="field">
-        <label for="f-name">Full Name</label>
-        <input type="text" id="f-name" name="full_name" placeholder="Jane Smith" required>
-      </div>
-      <div class="field">
-        <label for="f-dob">Date of Birth</label>
-        <input type="date" id="f-dob" name="dob" required>
-        <p class="hint">Required for medical records.</p>
-      </div>
-      <div class="field">
-        <label for="f-phone">Phone Number</label>
-        <input type="tel" id="f-phone" name="phone" placeholder="(505) 555-0100" required>
-      </div>
-      <div class="field">
-        <label for="f-email">Email Address</label>
-        <input type="email" id="f-email" name="email" placeholder="jane@example.com" required>
-      </div>
-      <div class="field">
-        <label for="f-referral">How did you hear about us?</label>
-        <select id="f-referral" name="referral_source" required>
-          <option value="" disabled selected>Select an option</option>
-          <option value="Instagram">Instagram</option>
-          <option value="Facebook">Facebook</option>
-          <option value="Google Search">Google Search</option>
-          <option value="Friend/Referral">Friend / Referral</option>
-          <option value="Existing Client">Existing Client</option>
-          <option value="Flyer/Print">Flyer / Print</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <button type="submit" class="btn-submit" id="submit-btn">Register for Event</button>
-    </form>
-  </div>
-
-  <div class="msg-success" id="success-state" style="display:none">
-    <div class="check">&#10003;</div>
-    <h2>You&rsquo;re registered!</h2>
-    <p>We&rsquo;ve received your registration for <span class="event-label" id="success-event-name"></span>
-    on <span id="success-event-date"></span>. We&rsquo;ll be in touch with details soon!</p>
-  </div>
+  </aside>
 </div>
 
 <script>
-// ── Config ──────────────────────────────────────────────────────────
-var API_BASE_URL = '';   // leave empty to use same origin
+// ── Config ──────────────────────────────────────────────────
+var API_BASE_URL = '';
 
-// ── State ───────────────────────────────────────────────────────────
+// ── State ───────────────────────────────────────────────────
 var currentEvent = null;
-var events = [];
+var allEvents    = [];
 
-function fmt(iso) {
-  if (!iso) return '';
-  var d = new Date(iso);
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+// ── Date helpers ────────────────────────────────────────────
+function fmtLong(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
   });
 }
 
-function showError(msg) {
-  var el = document.getElementById('form-error');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function clearError() {
-  var el = document.getElementById('form-error');
-  el.textContent = '';
-  el.style.display = 'none';
+function fmtShort(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
 }
 
+function fmtDeadline(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+  });
+}
+
+// ── Render event into hero + sidebar ────────────────────────
 function renderEvent(ev) {
   currentEvent = ev;
-  document.getElementById('ev-name').textContent = ev.name;
-  document.getElementById('ev-date').textContent = fmt(ev.event_date);
-  document.getElementById('ev-deadline').textContent = fmt(ev.registration_deadline);
 
-  var cn = document.getElementById('ev-clearance');
-  if (ev.medical_clearance_note) {
-    cn.textContent = ev.medical_clearance_note;
-    cn.style.display = 'block';
+  // Hero
+  var titleEl = document.getElementById('ef-hero-title');
+  var parts = ev.name.split(' ');
+  var last = parts.pop();
+  titleEl.innerHTML = parts.join(' ') + (parts.length ? ' <em>' + last + '</em>' : '<em>' + last + '</em>');
+
+  if (ev.description) {
+    document.getElementById('ef-hero-desc').textContent = ev.description;
   } else {
-    cn.style.display = 'none';
+    document.getElementById('ef-hero-desc').style.display = 'none';
   }
-  document.getElementById('event-info').style.display = 'block';
+
+  // Meta pills
+  var metaEl = document.getElementById('ef-event-meta');
+  metaEl.innerHTML =
+    '<div class="ef-meta-pill">📅 ' + new Date(ev.event_date).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + '</div>' +
+    '<div class="ef-meta-pill">⏰ ' + new Date(ev.event_date).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit',timeZoneName:'short'}) + '</div>' +
+    '<div class="ef-meta-pill">📋 Register by ' + new Date(ev.registration_deadline).toLocaleDateString('en-US', {month:'short',day:'numeric'}) + '</div>';
+
+  // Sidebar
+  document.getElementById('sb-event-name').textContent = ev.name;
+  document.getElementById('sb-date').textContent    = fmtLong(ev.event_date);
+  document.getElementById('sb-deadline').textContent = fmtDeadline(ev.registration_deadline);
+
+  if (ev.medical_clearance_note) {
+    document.getElementById('sb-clearance').textContent = ev.medical_clearance_note;
+    document.getElementById('sb-clearance-item').style.display = 'flex';
+  }
+
+  // Show everything
+  document.getElementById('ef-loading').style.display = 'none';
+  document.getElementById('ef-hero').style.display     = 'block';
+  document.getElementById('ef-layout').style.display   = 'grid';
 }
 
+// ── Load events on page load ─────────────────────────────────
 function loadEvents() {
   fetch(API_BASE_URL + '/events/active')
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      events = data.events || [];
-      document.getElementById('loading-state').style.display = 'none';
-      document.getElementById('form-state').style.display = 'block';
+      allEvents = data.events || [];
 
-      if (events.length === 0) {
-        document.getElementById('form-state').innerHTML =
-          '<p style="text-align:center;padding:24px;font-size:13px;color:#999;">No events are currently open for registration.</p>';
+      if (allEvents.length === 0) {
+        document.getElementById('ef-loading').textContent = 'No events are currently open for registration.';
         return;
       }
 
-      if (events.length === 1) {
-        renderEvent(events[0]);
+      if (allEvents.length === 1) {
+        renderEvent(allEvents[0]);
       } else {
-        var sel = document.getElementById('event-select');
-        events.forEach(function(ev) {
+        // Multiple events: show selector above layout
+        var sel = document.getElementById('ef-event-select');
+        allEvents.forEach(function(ev) {
           var opt = document.createElement('option');
           opt.value = ev.id;
-          opt.textContent = ev.name + ' — ' + new Date(ev.event_date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+          opt.textContent = ev.name + ' — ' + new Date(ev.event_date).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
           sel.appendChild(opt);
         });
-        document.getElementById('event-selector').style.display = 'block';
+        document.getElementById('ef-loading').style.display    = 'none';
+        document.getElementById('ef-selector-wrap').style.display = 'block';
+
         sel.addEventListener('change', function() {
-          var ev = events.find(function(e) { return e.id === sel.value; });
+          var ev = allEvents.find(function(e) { return e.id === sel.value; });
           if (ev) renderEvent(ev);
         });
       }
     })
     .catch(function() {
-      document.getElementById('loading-state').textContent = 'Could not load events. Please try again later.';
+      document.getElementById('ef-loading').textContent = 'Could not load events. Please try again or call (505) 500-7900.';
     });
 }
 
-document.getElementById('reg-form').addEventListener('submit', function(e) {
+// ── Validation ───────────────────────────────────────────────
+function validateField(fieldId, inputId, test) {
+  var field = document.getElementById(fieldId);
+  var val   = document.getElementById(inputId).value.trim();
+  var ok    = test(val);
+  field.classList.toggle('has-error', !ok);
+  return ok;
+}
+
+// ── Form submit ──────────────────────────────────────────────
+document.getElementById('ef-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  clearError();
 
-  if (!currentEvent) { showError('Please select an event.'); return; }
+  // Clear alert
+  var alertEl = document.getElementById('ef-alert-error');
+  alertEl.style.display = 'none';
 
-  var name     = document.getElementById('f-name').value.trim();
-  var dob      = document.getElementById('f-dob').value;
-  var phone    = document.getElementById('f-phone').value.trim();
-  var email    = document.getElementById('f-email').value.trim();
-  var referral = document.getElementById('f-referral').value;
+  // Validate
+  var ok = true;
+  ok = validateField('field-name',     'ef-name',     function(v) { return v.length >= 2; })     && ok;
+  ok = validateField('field-dob',      'ef-dob',      function(v) { return !!v; })                && ok;
+  ok = validateField('field-phone',    'ef-phone',    function(v) { return v.length >= 7; })      && ok;
+  ok = validateField('field-email',    'ef-email',    function(v) { return /\S+@\S+\.\S+/.test(v); }) && ok;
+  ok = validateField('field-referral', 'ef-referral', function(v) { return !!v; })                && ok;
 
-  if (!name || !dob || !phone || !email || !referral) {
-    showError('Please fill in all fields before submitting.');
-    return;
-  }
+  if (!ok) return;
+  if (!currentEvent) { alertEl.textContent = 'Please select an event.'; alertEl.style.display = 'block'; return; }
 
-  var btn = document.getElementById('submit-btn');
-  btn.disabled = true;
+  var btn = document.getElementById('ef-submit');
+  btn.disabled    = true;
   btn.textContent = 'Submitting…';
 
   fetch(API_BASE_URL + '/events/' + currentEvent.id + '/register', {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      full_name:       name,
-      dob:             dob,
-      phone:           phone,
-      email:           email,
-      referral_source: referral,
+      full_name:       document.getElementById('ef-name').value.trim(),
+      dob:             document.getElementById('ef-dob').value,
+      phone:           document.getElementById('ef-phone').value.trim(),
+      email:           document.getElementById('ef-email').value.trim(),
+      referral_source: document.getElementById('ef-referral').value,
     }),
   })
   .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
   .then(function(res) {
     if (res.ok) {
-      document.getElementById('form-state').style.display = 'none';
-      document.getElementById('success-event-name').textContent = currentEvent.name;
-      document.getElementById('success-event-date').textContent =
-        new Date(currentEvent.event_date).toLocaleDateString('en-US', {
-          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-        });
-      document.getElementById('success-state').style.display = 'block';
+      document.getElementById('ef-form-wrap').style.display = 'none';
+      document.getElementById('ef-success-event').textContent = currentEvent.name;
+      document.getElementById('ef-success-date').textContent  = fmtShort(currentEvent.event_date);
+      document.getElementById('ef-success').classList.add('is-visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      btn.disabled = false;
-      btn.textContent = 'Register for Event';
-      showError(res.data.detail || 'Registration failed. Please try again.');
+      btn.disabled    = false;
+      btn.textContent = 'Register for This Event';
+      alertEl.textContent  = res.data.detail || 'Registration failed. Please try again.';
+      alertEl.style.display = 'block';
     }
   })
-  .catch(function(err) {
-    btn.disabled = false;
-    btn.textContent = 'Register for Event';
-    showError('Network error. Please check your connection and try again.');
+  .catch(function() {
+    btn.disabled    = false;
+    btn.textContent = 'Register for This Event';
+    alertEl.textContent  = 'Network error. Please check your connection and try again.';
+    alertEl.style.display = 'block';
+  });
+});
+
+// ── Clear field errors on input ──────────────────────────────
+['ef-name','ef-dob','ef-phone','ef-email','ef-referral'].forEach(function(id) {
+  var el = document.getElementById(id);
+  el.addEventListener('input', function() {
+    el.closest('.ef-field').classList.remove('has-error');
   });
 });
 
