@@ -205,7 +205,8 @@ def send_registration_email(event_name: str, reg: dict):
         confirm_msg["To"]      = reg['email']
         confirm_msg.attach(MIMEText(confirm_html, "html"))
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls()
             server.login(GMAIL_USER, GMAIL_PASSWORD)
             server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
             server.sendmail(GMAIL_USER, reg['email'], confirm_msg.as_string())
@@ -396,7 +397,8 @@ def test_email(_: str = Depends(require_admin)):
 </body></html>
 """
         msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls()
             server.login(GMAIL_USER, GMAIL_PASSWORD)
             server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
         log.info("Test email sent successfully")
