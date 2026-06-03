@@ -45,8 +45,10 @@ textarea { resize:vertical; min-height:80px; line-height:1.5; }
 .btn-primary:hover:not(:disabled) { opacity:0.88; }
 .btn-secondary { background:#fff; color:var(--text); border:1px solid var(--border); }
 .btn-secondary:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
-.btn-danger { background:#fff; color:#c0392b; border:1px solid rgba(192,57,43,0.25); }
-.btn-danger:hover:not(:disabled) { background:#fff0f0; }
+.btn-danger  { background:#fff; color:#c0392b; border:1px solid rgba(192,57,43,0.25); }
+.btn-danger:hover:not(:disabled)  { background:#fff0f0; }
+.btn-success { background:#fff; color:#1a7a3c; border:1px solid rgba(26,122,60,0.25); }
+.btn-success:hover:not(:disabled) { background:#f0fff5; }
 .btn-archive { background:#fff; color:#8b6914; border:1px solid rgba(139,105,20,0.25); }
 .btn-archive:hover:not(:disabled) { background:#fffbf0; }
 .badge-archived { background:rgba(139,105,20,0.10); color:#8b6914; }
@@ -415,7 +417,10 @@ function viewRegs(eventId, eventName) {
           '<td>' + esc(r.email) + '</td>' +
           '<td>' + esc(r.referral_source) + '</td>' +
           '<td style="color:#bbb;">' + fmt(r.created_at) + '</td>' +
-          '<td><button class="btn btn-danger" onclick="deleteReg(\'' + r.id + '\', \'' + esc(r.full_name) + '\')">Delete</button></td>' +
+          '<td style="white-space:nowrap;">' +
+            '<button class="btn btn-success" id="welcome-btn-' + r.id + '" onclick="sendWelcome(\'' + r.id + '\', \'' + esc(r.full_name) + '\', \'' + esc(r.email) + '\')">&#9993; Welcome</button> ' +
+            '<button class="btn btn-danger" onclick="deleteReg(\'' + r.id + '\', \'' + esc(r.full_name) + '\')">Delete</button>' +
+          '</td>' +
         '</tr>';
       }).join('');
     });
@@ -445,6 +450,28 @@ function deleteReg(regId, name) {
     .catch(function() {
       if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
       alert('Network error.');
+    });
+}
+
+function sendWelcome(regId, name, email) {
+  var btn = document.getElementById('welcome-btn-' + regId);
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  apiFetch('/events/admin/registrations/' + regId + '/send-welcome', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        if (btn) { btn.textContent = '✓ Sent'; btn.style.color = '#1a7a3c'; }
+        setTimeout(function() {
+          if (btn) { btn.disabled = false; btn.textContent = '✉ Welcome'; btn.style.color = ''; }
+        }, 3000);
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = '✉ Welcome'; }
+        alert('Failed to send: ' + (res.detail || 'Unknown error'));
+      }
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '✉ Welcome'; }
+      alert('Network error sending welcome email.');
     });
 }
 

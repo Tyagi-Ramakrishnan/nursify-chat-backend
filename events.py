@@ -602,3 +602,43 @@ def admin_delete_registration(registration_id: str, _: str = Depends(require_adm
     except Exception as e:
         log.error(f"admin_delete_registration: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/registrations/{registration_id}/send-welcome")
+def admin_send_welcome(registration_id: str, _: str = Depends(require_admin)):
+    """Resend (or send for the first time) the welcome confirmation email to a registrant."""
+    if not DATABASE_URL:
+        raise HTTPException(status_code=503, detail="Database not configured")
+    if not RESEND_API_KEY:
+        raise HTTPException(status_code=503, detail="RESEND_API_KEY not configured")
+    try:
+        con = get_db()
+        cur = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT r.id, r.full_name, r.dob, r.phone, r.email, r.referral_source,
+                   e.name AS event_name
+            FROM events_registrations r
+            JOIN events_events e ON e.id = r.event_id
+            WHERE r.id = %s
+        """, (registration_id,))
+        row = cur.fetchone()
+        cur.close(); con.close()
+        if not row:
+            raise HTTPException(status_code=404, detail="Registration not found")
+
+        reg = dict(row)
+        send_registration_email(reg["event_name"], {
+            "full_name":       reg["full_name"],
+            "dob":             str(reg["dob"]),
+            "phone":           reg["phone"],
+            "email":           reg["email"],
+            "referral_source": reg["referral_source"],
+            "created_at":      "now",
+        })
+        log.info(f"Welcome email resent to {reg['email']} for {reg['event_name']}")
+        return JSONResponse({"success": True, "sent_to": reg["email"]})
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"admin_send_welcome: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
