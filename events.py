@@ -8,12 +8,10 @@ import io
 import logging
 import os
 import secrets
-import smtplib
 import psycopg2
 import psycopg2.extras
+import resend
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -24,8 +22,9 @@ from pydantic import BaseModel, EmailStr
 log = logging.getLogger("nursify.events")
 
 DATABASE_URL    = os.environ.get("DATABASE_URL", "")
-GMAIL_USER      = os.environ.get("GMAIL_USER", "nursifyaesthetics@gmail.com")
-GMAIL_PASSWORD  = os.environ.get("GMAIL_APP_PASSWORD", "")
+RESEND_API_KEY  = os.environ.get("RESEND_API_KEY", "")
+FROM_EMAIL      = os.environ.get("FROM_EMAIL", "Nursify Aesthetics & Wellness <events@nursifyaesthetics.com>")
+NOTIFY_EMAIL    = os.environ.get("NOTIFY_EMAIL", "tyagi.ramakrishnan@gmail.com")
 ADMIN_PASSWORD  = os.environ.get("ADMIN_PASSWORD", "")
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -140,53 +139,59 @@ def require_admin(credentials: HTTPBasicCredentials = Depends(security)):
 
 # ── Email ──────────────────────────────────────────────────────────────
 
+def _resend_client():
+    resend.api_key = RESEND_API_KEY
+
+
 def send_registration_email(event_name: str, reg: dict):
-    if not GMAIL_PASSWORD:
-        log.warning("GMAIL_APP_PASSWORD not set — registration email not sent")
+    if not RESEND_API_KEY:
+        log.warning("RESEND_API_KEY not set — registration email not sent")
         return
+    _resend_client()
+    first_name = reg['full_name'].split()[0]
     try:
         # ── Internal notification to the business ──────────────────
-        internal_body = (
-            f"New registration for: {event_name}\n\n"
-            f"Full Name:       {reg['full_name']}\n"
-            f"Date of Birth:   {reg['dob']}\n"
-            f"Phone:           {reg['phone']}\n"
-            f"Email:           {reg['email']}\n"
-            f"Referral Source: {reg['referral_source']}\n"
-            f"Registered At:   {reg.get('created_at', 'now')}\n"
-        )
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"New Registration: {event_name}"
-        msg["From"]    = GMAIL_USER
-        msg["To"]      = GMAIL_USER
-        msg.attach(MIMEText(internal_body, "plain"))
+        resend.Emails.send({
+            "from":    FROM_EMAIL,
+            "to":      [NOTIFY_EMAIL],
+            "subject": f"New Registration: {event_name}",
+            "html": f"""
+<div style="font-family:Georgia,serif;max-width:480px;padding:24px;">
+  <h2 style="color:#2a0d18;font-weight:300;">New Registration</h2>
+  <p style="color:#4a2535;"><strong>Event:</strong> {event_name}</p>
+  <p style="color:#4a2535;"><strong>Name:</strong> {reg['full_name']}</p>
+  <p style="color:#4a2535;"><strong>DOB:</strong> {reg['dob']}</p>
+  <p style="color:#4a2535;"><strong>Phone:</strong> {reg['phone']}</p>
+  <p style="color:#4a2535;"><strong>Email:</strong> {reg['email']}</p>
+  <p style="color:#4a2535;"><strong>Referral:</strong> {reg['referral_source']}</p>
+  <p style="color:#4a2535;"><strong>Registered:</strong> {reg.get('created_at', 'now')}</p>
+</div>""",
+        })
 
-        # ── Confirmation email to the registrant ───────────────────
-        first_name = reg['full_name'].split()[0]
-        confirm_html = f"""
+        # ── Confirmation to registrant ─────────────────────────────
+        resend.Emails.send({
+            "from":    FROM_EMAIL,
+            "to":      [reg['email']],
+            "subject": f"You're registered — {event_name}",
+            "html": f"""
 <html><body style="font-family:Georgia,serif;background:#fdf8f9;padding:0;margin:0;">
 <div style="max-width:560px;margin:0 auto;background:#fff;border-top:4px solid #c9a96e;">
   <div style="background:linear-gradient(135deg,#2a0d18,#3d1428);padding:40px 36px;text-align:center;">
     <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#c9a96e;margin:0 0 12px;">Nursify Aesthetics &amp; Wellness</p>
-    <h1 style="font-size:28px;font-weight:300;color:#fdf8f9;margin:0;line-height:1.3;">You&rsquo;re <em>Registered!</em></h1>
+    <h1 style="font-size:28px;font-weight:300;color:#fdf8f9;margin:0;">You&rsquo;re Registered!</h1>
   </div>
   <div style="padding:36px;">
     <p style="font-size:15px;color:#3d1428;margin:0 0 16px;">Hi {first_name},</p>
     <p style="font-size:14px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
       Thank you for registering for <strong>{event_name}</strong>. We&rsquo;re so excited to have you join us!
     </p>
-    <div style="background:#fdf8f9;border-left:3px solid #c9a96e;padding:16px 20px;margin:0 0 24px;border-radius:2px;">
-      <p style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;">Your Registration Details</p>
+    <div style="background:#fdf8f9;border-left:3px solid #c9a96e;padding:16px 20px;margin:0 0 24px;">
+      <p style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;">Event Details</p>
       <p style="font-size:13px;color:#1a0a10;margin:0;line-height:1.8;">
-        Name: {reg['full_name']}<br>
-        Event: {event_name}<br>
-        Location: 5500 San Mateo Blvd NE, Suite 102, Albuquerque, NM 87109
+        <strong>Event:</strong> {event_name}<br>
+        <strong>Location:</strong> 5500 San Mateo Blvd NE, Suite 102, Albuquerque, NM 87109
       </p>
     </div>
-    <p style="font-size:13px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
-      If you have any questions before the event, please don&rsquo;t hesitate to reach out &mdash;
-      we&rsquo;re just a call or text away.
-    </p>
     <div style="text-align:center;margin:28px 0;">
       <a href="tel:+15055007900" style="display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#d4538f,#ff69b4);color:#fff;text-decoration:none;font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
         Call or Text (505) 500-7900
@@ -197,21 +202,9 @@ def send_registration_email(event_name: str, reg: dict):
     </p>
   </div>
 </div>
-</body></html>
-"""
-        confirm_msg = MIMEMultipart("alternative")
-        confirm_msg["Subject"] = f"You're registered — {event_name}"
-        confirm_msg["From"]    = f"Nursify Aesthetics & Wellness <{GMAIL_USER}>"
-        confirm_msg["To"]      = reg['email']
-        confirm_msg.attach(MIMEText(confirm_html, "html"))
-
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
-            server.starttls()
-            server.login(GMAIL_USER, GMAIL_PASSWORD)
-            server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
-            server.sendmail(GMAIL_USER, reg['email'], confirm_msg.as_string())
-
-        log.info(f"Registration emails sent for {event_name} to business + {reg['email']}")
+</body></html>""",
+        })
+        log.info(f"Registration emails sent via Resend for {event_name} to {reg['email']}")
     except Exception as e:
         log.error(f"Registration email failed: {e}")
 
@@ -376,37 +369,29 @@ def register(event_id: str, body: RegistrationIn, background_tasks: BackgroundTa
 
 @router.post("/admin/test-email")
 def test_email(_: str = Depends(require_admin)):
-    """Send a test email to GMAIL_USER to verify SMTP is working."""
-    if not GMAIL_PASSWORD:
-        raise HTTPException(status_code=503, detail="GMAIL_APP_PASSWORD is not set in environment variables")
+    """Send a test email via Resend to verify email is working."""
+    if not RESEND_API_KEY:
+        raise HTTPException(status_code=503, detail="RESEND_API_KEY is not set in environment variables")
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Nursify — Email Test ✅"
-        msg["From"]    = f"Nursify Aesthetics & Wellness <{GMAIL_USER}>"
-        msg["To"]      = GMAIL_USER
-        html = f"""
+        _resend_client()
+        resend.Emails.send({
+            "from":    FROM_EMAIL,
+            "to":      [NOTIFY_EMAIL],
+            "subject": "Nursify — Email Test ✅",
+            "html": f"""
 <html><body style="font-family:Georgia,serif;background:#fdf8f9;padding:32px;">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-top:4px solid #c9a96e;padding:32px;">
-    <h2 style="font-family:Georgia,serif;font-weight:300;color:#2a0d18;margin:0 0 16px;">Email is working! ✅</h2>
+    <h2 style="font-weight:300;color:#2a0d18;margin:0 0 16px;">Email is working! ✅</h2>
     <p style="color:#4a2535;line-height:1.7;font-size:14px;">
-      This test email was sent from the Nursify event registration system.<br><br>
-      SMTP is configured correctly. Registration confirmation emails will now
-      be delivered to clients and to <strong>{GMAIL_USER}</strong>.
+      This test email was sent from the Nursify event registration system via Resend.<br><br>
+      Email is configured correctly. Registration confirmations will now be delivered
+      to clients and notifications sent to <strong>{NOTIFY_EMAIL}</strong>.
     </p>
   </div>
-</body></html>
-"""
-        msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
-            server.starttls()
-            server.login(GMAIL_USER, GMAIL_PASSWORD)
-            server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
-        log.info("Test email sent successfully")
-        return {"success": True, "sent_to": GMAIL_USER}
-    except smtplib.SMTPAuthenticationError:
-        raise HTTPException(status_code=400, detail="Authentication failed — check GMAIL_APP_PASSWORD is a valid 16-character app password, not your regular Gmail password")
-    except smtplib.SMTPException as e:
-        raise HTTPException(status_code=500, detail=f"SMTP error: {str(e)}")
+</body></html>""",
+        })
+        log.info("Test email sent successfully via Resend")
+        return {"success": True, "sent_to": NOTIFY_EMAIL}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
