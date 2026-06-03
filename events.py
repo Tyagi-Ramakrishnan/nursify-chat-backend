@@ -16,7 +16,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, EmailStr
@@ -309,7 +309,7 @@ def get_event(event_id: str):
 
 
 @router.post("/{event_id}/register")
-def register(event_id: str, body: RegistrationIn):
+def register(event_id: str, body: RegistrationIn, background_tasks: BackgroundTasks):
     if not DATABASE_URL:
         raise HTTPException(status_code=503, detail="Database not configured")
     try:
@@ -349,7 +349,7 @@ def register(event_id: str, body: RegistrationIn):
         con.commit()
         cur.close(); con.close()
 
-        send_registration_email(ev["name"], {
+        background_tasks.add_task(send_registration_email, ev["name"], {
             "full_name":       body.full_name,
             "dob":             body.dob,
             "phone":           body.phone,
