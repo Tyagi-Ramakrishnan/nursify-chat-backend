@@ -145,7 +145,8 @@ def send_registration_email(event_name: str, reg: dict):
         log.warning("GMAIL_APP_PASSWORD not set — registration email not sent")
         return
     try:
-        body = (
+        # ── Internal notification to the business ──────────────────
+        internal_body = (
             f"New registration for: {event_name}\n\n"
             f"Full Name:       {reg['full_name']}\n"
             f"Date of Birth:   {reg['dob']}\n"
@@ -158,11 +159,58 @@ def send_registration_email(event_name: str, reg: dict):
         msg["Subject"] = f"New Registration: {event_name}"
         msg["From"]    = GMAIL_USER
         msg["To"]      = GMAIL_USER
-        msg.attach(MIMEText(body, "plain"))
+        msg.attach(MIMEText(internal_body, "plain"))
+
+        # ── Confirmation email to the registrant ───────────────────
+        first_name = reg['full_name'].split()[0]
+        confirm_html = f"""
+<html><body style="font-family:Georgia,serif;background:#fdf8f9;padding:0;margin:0;">
+<div style="max-width:560px;margin:0 auto;background:#fff;border-top:4px solid #c9a96e;">
+  <div style="background:linear-gradient(135deg,#2a0d18,#3d1428);padding:40px 36px;text-align:center;">
+    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#c9a96e;margin:0 0 12px;">Nursify Aesthetics &amp; Wellness</p>
+    <h1 style="font-size:28px;font-weight:300;color:#fdf8f9;margin:0;line-height:1.3;">You&rsquo;re <em>Registered!</em></h1>
+  </div>
+  <div style="padding:36px;">
+    <p style="font-size:15px;color:#3d1428;margin:0 0 16px;">Hi {first_name},</p>
+    <p style="font-size:14px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
+      Thank you for registering for <strong>{event_name}</strong>. We&rsquo;re so excited to have you join us!
+    </p>
+    <div style="background:#fdf8f9;border-left:3px solid #c9a96e;padding:16px 20px;margin:0 0 24px;border-radius:2px;">
+      <p style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;">Your Registration Details</p>
+      <p style="font-size:13px;color:#1a0a10;margin:0;line-height:1.8;">
+        Name: {reg['full_name']}<br>
+        Event: {event_name}<br>
+        Location: 5500 San Mateo Blvd NE, Suite 102, Albuquerque, NM 87109
+      </p>
+    </div>
+    <p style="font-size:13px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
+      If you have any questions before the event, please don&rsquo;t hesitate to reach out &mdash;
+      we&rsquo;re just a call or text away.
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="tel:+15055007900" style="display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#d4538f,#ff69b4);color:#fff;text-decoration:none;font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
+        Call or Text (505) 500-7900
+      </a>
+    </div>
+    <p style="font-size:12px;color:#a08090;text-align:center;margin:0;">
+      Nursify Aesthetics &amp; Wellness &nbsp;&middot;&nbsp; 5500 San Mateo Blvd NE, Suite 102 &nbsp;&middot;&nbsp; Albuquerque, NM 87109
+    </p>
+  </div>
+</div>
+</body></html>
+"""
+        confirm_msg = MIMEMultipart("alternative")
+        confirm_msg["Subject"] = f"You're registered — {event_name}"
+        confirm_msg["From"]    = f"Nursify Aesthetics & Wellness <{GMAIL_USER}>"
+        confirm_msg["To"]      = reg['email']
+        confirm_msg.attach(MIMEText(confirm_html, "html"))
+
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(GMAIL_USER, GMAIL_PASSWORD)
             server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
-        log.info(f"Registration email sent for {event_name}")
+            server.sendmail(GMAIL_USER, reg['email'], confirm_msg.as_string())
+
+        log.info(f"Registration emails sent for {event_name} to business + {reg['email']}")
     except Exception as e:
         log.error(f"Registration email failed: {e}")
 
