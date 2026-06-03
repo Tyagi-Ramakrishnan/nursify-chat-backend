@@ -373,6 +373,42 @@ def register(event_id: str, body: RegistrationIn, background_tasks: BackgroundTa
 
 # ── Admin endpoints ────────────────────────────────────────────────────
 
+@router.post("/admin/test-email")
+def test_email(_: str = Depends(require_admin)):
+    """Send a test email to GMAIL_USER to verify SMTP is working."""
+    if not GMAIL_PASSWORD:
+        raise HTTPException(status_code=503, detail="GMAIL_APP_PASSWORD is not set in environment variables")
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Nursify — Email Test ✅"
+        msg["From"]    = f"Nursify Aesthetics & Wellness <{GMAIL_USER}>"
+        msg["To"]      = GMAIL_USER
+        html = f"""
+<html><body style="font-family:Georgia,serif;background:#fdf8f9;padding:32px;">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border-top:4px solid #c9a96e;padding:32px;">
+    <h2 style="font-family:Georgia,serif;font-weight:300;color:#2a0d18;margin:0 0 16px;">Email is working! ✅</h2>
+    <p style="color:#4a2535;line-height:1.7;font-size:14px;">
+      This test email was sent from the Nursify event registration system.<br><br>
+      SMTP is configured correctly. Registration confirmation emails will now
+      be delivered to clients and to <strong>{GMAIL_USER}</strong>.
+    </p>
+  </div>
+</body></html>
+"""
+        msg.attach(MIMEText(html, "html"))
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_USER, GMAIL_PASSWORD)
+            server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
+        log.info("Test email sent successfully")
+        return {"success": True, "sent_to": GMAIL_USER}
+    except smtplib.SMTPAuthenticationError:
+        raise HTTPException(status_code=400, detail="Authentication failed — check GMAIL_APP_PASSWORD is a valid 16-character app password, not your regular Gmail password")
+    except smtplib.SMTPException as e:
+        raise HTTPException(status_code=500, detail=f"SMTP error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/admin/ui", response_class=HTMLResponse)
 def admin_ui():
     path = os.path.join(os.path.dirname(__file__), "events_admin.html")
