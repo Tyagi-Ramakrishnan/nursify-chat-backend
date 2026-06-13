@@ -177,6 +177,7 @@ tr:hover td { background:rgba(255,105,180,0.02); }
           <h2 id="regs-title">Registrations</h2>
           <div style="display:flex;gap:8px;align-items:center;">
             <span id="regs-count" style="font-size:12px;color:#bbb;"></span>
+            <button class="btn btn-success" id="reminder-btn" onclick="sendReminderAll()">&#9993; Remind All</button>
             <button class="btn btn-secondary" id="csv-btn">Export CSV</button>
           </div>
         </div>
@@ -472,6 +473,24 @@ function sendWelcome(regId, name, email) {
     .catch(function() {
       if (btn) { btn.disabled = false; btn.textContent = '✉ Welcome'; }
       alert('Network error sending welcome email.');
+    });
+}
+
+function sendReminderAll() {
+  var count = document.getElementById('regs-count').textContent.match(/(\d+)/);
+  var n = count ? count[1] : 'all';
+  if (!confirm('Send a reminder email to ' + n + ' registrant(s) for this event?')) return;
+  var btn = document.getElementById('reminder-btn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  apiFetch('/events/admin/' + viewingEventId + '/send-reminder', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      btn.textContent = '✓ Sent to ' + res.sent;
+      setTimeout(function() { btn.disabled = false; btn.textContent = '✉ Remind All'; }, 4000);
+    })
+    .catch(function() {
+      btn.disabled = false; btn.textContent = '✉ Remind All';
+      alert('Network error sending reminders.');
     });
 }
 

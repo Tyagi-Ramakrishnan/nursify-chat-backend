@@ -642,3 +642,88 @@ def admin_send_welcome(registration_id: str, _: str = Depends(require_admin)):
     except Exception as e:
         log.error(f"admin_send_welcome: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/{event_id}/send-reminder")
+def admin_send_reminder(event_id: str, background_tasks: BackgroundTasks, _: str = Depends(require_admin)):
+    """Send a reminder email to all registrants for an event."""
+    if not DATABASE_URL:
+        raise HTTPException(status_code=503, detail="Database not configured")
+    if not RESEND_API_KEY:
+        raise HTTPException(status_code=503, detail="RESEND_API_KEY not configured")
+    try:
+        con = get_db()
+        cur = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT name, event_date FROM events_events WHERE id = %s", (event_id,))
+        ev = cur.fetchone()
+        if not ev:
+            cur.close(); con.close()
+            raise HTTPException(status_code=404, detail="Event not found")
+        cur.execute("""
+            SELECT full_name, email FROM events_registrations
+            WHERE event_id = %s ORDER BY created_at ASC
+        """, (event_id,))
+        registrants = [dict(r) for r in cur.fetchall()]
+        cur.close(); con.close()
+
+        if not registrants:
+            return JSONResponse({"success": True, "sent": 0, "message": "No registrants to notify"})
+
+        event_name = ev["name"]
+        event_date = ev["event_date"]
+
+        def send_all():
+            _resend_client()
+            for r in registrants:
+                first_name = r["full_name"].split()[0]
+                try:
+                    resend.Emails.send({
+                        "from":    FROM_EMAIL,
+                        "to":      [r["email"]],
+                        "subject": f"Reminder — {event_name} is coming up!",
+                        "html": f"""
+<html><body style="font-family:Georgia,serif;background:#fdf8f9;padding:0;margin:0;">
+<div style="max-width:560px;margin:0 auto;background:#fff;border-top:4px solid #c9a96e;">
+  <div style="background:linear-gradient(135deg,#2a0d18,#3d1428);padding:40px 36px;text-align:center;">
+    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#c9a96e;margin:0 0 12px;">Nursify Aesthetics &amp; Wellness</p>
+    <h1 style="font-size:28px;font-weight:300;color:#fdf8f9;margin:0;">Don&rsquo;t Forget &mdash; We&rsquo;re Almost There!</h1>
+  </div>
+  <div style="padding:36px;">
+    <p style="font-size:15px;color:#3d1428;margin:0 0 16px;">Hi {first_name},</p>
+    <p style="font-size:14px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
+      Just a friendly reminder that <strong>{event_name}</strong> is coming up soon.
+      We&rsquo;re so excited to see you there!
+    </p>
+    <div style="background:#fdf8f9;border-left:3px solid #c9a96e;padding:16px 20px;margin:0 0 24px;">
+      <p style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;">Event Details</p>
+      <p style="font-size:13px;color:#1a0a10;margin:0;line-height:1.8;">
+        <strong>Event:</strong> {event_name}<br>
+        <strong>Location:</strong> 5500 San Mateo Blvd NE, Suite 102, Albuquerque, NM 87109
+      </p>
+    </div>
+    <p style="font-size:14px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
+      If you have any questions before the event, we&rsquo;re just a call or text away.
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="tel:+15055007900" style="display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#d4538f,#ff69b4);color:#fff;text-decoration:none;font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
+        Call or Text (505) 500-7900
+      </a>
+    </div>
+    <p style="font-size:12px;color:#a08090;text-align:center;margin:0;">
+      Nursify Aesthetics &amp; Wellness &nbsp;&middot;&nbsp; 5500 San Mateo Blvd NE, Suite 102 &nbsp;&middot;&nbsp; Albuquerque, NM 87109
+    </p>
+  </div>
+</div>
+</body></html>""",
+                    })
+                    log.info(f"Reminder sent to {r['email']}")
+                except Exception as e:
+                    log.error(f"Reminder failed for {r['email']}: {e}")
+
+        background_tasks.add_task(send_all)
+        return JSONResponse({"success": True, "sent": len(registrants), "message": f"Sending reminders to {len(registrants)} registrant(s)"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"admin_send_reminder: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
