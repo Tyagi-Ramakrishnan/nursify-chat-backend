@@ -680,29 +680,30 @@ def admin_send_reminder(event_id: str, background_tasks: BackgroundTasks, _: str
                     resend.Emails.send({
                         "from":    FROM_EMAIL,
                         "to":      [r["email"]],
-                        "subject": f"Reminder — {event_name} is coming up!",
+                        "subject": f"Today's the Day — {event_name} is Tonight!",
                         "html": f"""
 <html><body style="font-family:Georgia,serif;background:#fdf8f9;padding:0;margin:0;">
 <div style="max-width:560px;margin:0 auto;background:#fff;border-top:4px solid #c9a96e;">
   <div style="background:linear-gradient(135deg,#2a0d18,#3d1428);padding:40px 36px;text-align:center;">
     <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#c9a96e;margin:0 0 12px;">Nursify Aesthetics &amp; Wellness</p>
-    <h1 style="font-size:28px;font-weight:300;color:#fdf8f9;margin:0;">Don&rsquo;t Forget &mdash; We&rsquo;re Almost There!</h1>
+    <h1 style="font-size:28px;font-weight:300;color:#fdf8f9;margin:0;">Today&rsquo;s the Day!</h1>
   </div>
   <div style="padding:36px;">
     <p style="font-size:15px;color:#3d1428;margin:0 0 16px;">Hi {first_name},</p>
     <p style="font-size:14px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
-      Just a friendly reminder that <strong>{event_name}</strong> is coming up soon.
-      We&rsquo;re so excited to see you there!
+      <strong>{event_name}</strong> is <strong>today</strong> and we can&rsquo;t wait to see you!
+      We&rsquo;ll be ready for you from <strong>2 PM to 6 PM</strong> &mdash; come anytime.
     </p>
     <div style="background:#fdf8f9;border-left:3px solid #c9a96e;padding:16px 20px;margin:0 0 24px;">
       <p style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;">Event Details</p>
       <p style="font-size:13px;color:#1a0a10;margin:0;line-height:1.8;">
         <strong>Event:</strong> {event_name}<br>
+        <strong>When:</strong> Today, 2 PM &ndash; 6 PM<br>
         <strong>Location:</strong> 5500 San Mateo Blvd NE, Suite 102, Albuquerque, NM 87109
       </p>
     </div>
     <p style="font-size:14px;color:#4a2535;line-height:1.7;margin:0 0 24px;">
-      If you have any questions before the event, we&rsquo;re just a call or text away.
+      If you need directions or have any last-minute questions, we&rsquo;re just a call or text away.
     </p>
     <div style="text-align:center;margin:28px 0;">
       <a href="tel:+15055007900" style="display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#d4538f,#ff69b4);color:#fff;text-decoration:none;font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
